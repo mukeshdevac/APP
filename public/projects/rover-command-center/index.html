@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TEN Robotics</title>
+    <script>
+const b64_n = [
+"IWZ1bmN0aW9uKHQsaSl7Im9iamVjdCI9PXR5cGVvZiBleHBvcnRzJiYib2JqZWN0",
+"Ij09dHlwZW9mIG1vZHVsZT9tb2R1bGUuZXhwb3J0cz1pKCk6ImZ1bmN0aW9uIj09",
+"dHlwZW9mIGRlZmluZSYmZGVmaW5lLmFtZD9kZWZpbmUoIm5pcHBsZWpzIixbXSxp",
+"KToib2JqZWN0Ij09dHlwZW9mIGV4cG9ydHM/ZXhwb3J0cy5uaXBwbGVqcz1pKCk6",
+"dC5uaXBwbGVqcz1pKCl9KHdpbmRvdyxmdW5jdGlvbigpe3JldHVybiBlPVtmdW5j",
+"dGlvbih0LGksZSl7InVzZSBzdHJpY3QiO2UucihpKTtmdW5jdGlvbiB2KHQsaSl7",
+"dmFyIGU9aS54LXQueCxpPWkueS10Lnk7cmV0dXJuIE1hdGguc3FydChlKmUraSpp",
+"KX1mdW5jdGlvbiBiKHQpe3JldHVybiB0KihNYXRoLlBJLzE4MCl9ZnVuY3Rpb24g",
+"bih0KXtmLmhhcyh0KSYmY2xlYXJUaW1lb3V0KGYuZ2V0KHQpKSxmLnNldCh0LHNl",
+"dFRpbWVvdXQodCwxMDApKX1mdW5jdGlvbiBzKHQsaSxlKXtmb3IodmFyIG8sbj1p",
+"LnNwbGl0KC9bICxdKy9nKSxzPTA7czxuLmxlbmd0aDtzKz0xKW89bltzXSx0LmFk",
+"ZEV2ZW50TGlzdGVuZXI/dC5hZGRFdmVudExpc3RlbmVyKG8sZSwhMSk6dC5hdHRh",
+"Y2hFdmVudCYmdC5hdHRhY2hFdmVudChvLGUpfWZ1bmN0aW9uIG8odCxpLGUpe2Zv",
+"cih2YXIgbyxuPWkuc3BsaXQoL1sgLF0rL2cpLHM9MDtzPG4ubGVuZ3RoO3MrPTEp",
+"bz1uW3NdLHQucmVtb3ZlRXZlbnRMaXN0ZW5lcj90LnJlbW92ZUV2ZW50TGlzdGVu",
+"ZXIobyxlKTp0LmRldGFjaEV2ZW50JiZ0LmRldGFjaEV2ZW50KG8sZSl9ZnVuY3Rp",
+"b24gcih0KXtyZXR1cm4gdC5wcmV2ZW50RGVmYXVsdCgpLHQudHlwZS5tYXRjaCgv",
+"XnRvdWNoLyk/dC5jaGFuZ2VkVG91Y2hlczp0fWZ1bmN0aW9uIGQoKXtyZXR1cm57",
+"eDp2b2lkIDAhPT13aW5kb3cucGFnZVhPZmZzZXQ/d2luZG93LnBhZ2VYT2Zmc2V0",
+"Oihkb2N1bWVudC5kb2N1bWVudEVsZW1lbnR8fGRvY3VtZW50LmJvZHkucGFyZW50",
+"Tm9kZXx8ZG9jdW1lbnQuYm9keSkuc2Nyb2xsTGVmdCx5OnZvaWQgMCE9PXdpbmRv",
+"dy5wYWdlWU9mZnNldD93aW5kb3cucGFnZVlPZmZzZXQ6KGRvY3VtZW50LmRvY3Vt",
+"ZW50RWxlbWVudHx8ZG9jdW1lbnQuYm9keS5wYXJlbnROb2RlfHxkb2N1bWVudC5i",
+"b2R5KS5zY3JvbGxUb3B9fWZ1bmN0aW9uIHAodCxpKXtpLnRvcHx8aS5yaWdodHx8",
+"aS5ib3R0b218fGkubGVmdD8odC5zdHlsZS50b3A9aS50b3AsdC5zdHlsZS5yaWdo",
+"dD1pLnJpZ2h0LHQuc3R5bGUuYm90dG9tPWkuYm90dG9tLHQuc3R5bGUubGVmdD1p",
+"LmxlZnQpOih0LnN0eWxlLmxlZnQ9aS54KyJweCIsdC5zdHlsZS50b3A9aS55KyJw",
+"eCIpfWZ1bmN0aW9uIGEodCxpLGUpe3ZhciBvLG49Yyh0KTtmb3IobyBpbiBuKWlm",
+"KG4uaGFzT3duUHJvcGVydHkobykpaWYoInN0cmluZyI9PXR5cGVvZiBpKW5bb109",
+"aSsiICIrZTtlbHNle2Zvcih2YXIgcz0iIixyPTAsZD1pLmxlbmd0aDtyPGQ7cis9",
+"MSlzKz1pW3JdKyIgIitlKyIsICI7bltvXT1zLnNsaWNlKDAsLTIpfXJldHVybiBu",
+"fWZ1bmN0aW9uIGMoaSl7dmFyIGU9e307cmV0dXJuIGVbaV09IiIsWyJ3ZWJraXQi",
+"LCJNb3oiLCJvIl0uZm9yRWFjaChmdW5jdGlvbih0KXtlW3QraS5jaGFyQXQoMCku",
+"dG9VcHBlckNhc2UoKStpLnNsaWNlKDEpXT0iIn0pLGV9ZnVuY3Rpb24gbCh0LGkp",
+"e2Zvcih2YXIgZSBpbiBpKWkuaGFzT3duUHJvcGVydHkoZSkmJih0W2VdPWlbZV0p",
+"fWZ1bmN0aW9uIGgodCxpKXtpZih0Lmxlbmd0aClmb3IodmFyIGU9MCxvPXQubGVu",
+"Z3RoO2U8bztlKz0xKWkodFtlXSk7ZWxzZSBpKHQpfXZhciB1LGY9bmV3IE1hcCxl",
+"PSEhKCJvbnRvdWNoc3RhcnQiaW4gd2luZG93KSx5PSEhd2luZG93LlBvaW50ZXJF",
+"dmVudCxtPSEhd2luZG93Lk1TUG9pbnRlckV2ZW50LGc9e3N0YXJ0OiJtb3VzZWRv",
+"d24iLG1vdmU6Im1vdXNlbW92ZSIsZW5kOiJtb3VzZXVwIn0seD17fTtmdW5jdGlv",
+"biBPKCl7fXk/dT17c3RhcnQ6InBvaW50ZXJkb3duIixtb3ZlOiJwb2ludGVybW92",
+"ZSIsZW5kOiJwb2ludGVydXAsIHBvaW50ZXJjYW5jZWwifTptP3U9e3N0YXJ0OiJN",
+"U1BvaW50ZXJEb3duIixtb3ZlOiJNU1BvaW50ZXJNb3ZlIixlbmQ6Ik1TUG9pbnRl",
+"clVwIn06ZT8odT17c3RhcnQ6InRvdWNoc3RhcnQiLG1vdmU6InRvdWNobW92ZSIs",
+"ZW5kOiJ0b3VjaGVuZCwgdG91Y2hjYW5jZWwifSx4PWcpOnU9ZyxPLnByb3RvdHlw",
+"ZS5vbj1mdW5jdGlvbih0LGkpe3ZhciBlLG89dC5zcGxpdCgvWyAsXSsvZyk7dGhp",
+"cy5faGFuZGxlcnNfPXRoaXMuX2hhbmRsZXJzX3x8e307Zm9yKHZhciBuPTA7bjxv",
+"Lmxlbmd0aDtuKz0xKWU9b1tuXSx0aGlzLl9oYW5kbGVyc19bZV09dGhpcy5faGFu",
+"ZGxlcnNfW2VdfHxbXSx0aGlzLl9oYW5kbGVyc19bZV0ucHVzaChpKTtyZXR1cm4g",
+"dGhpc30sTy5wcm90b3R5cGUub2ZmPWZ1bmN0aW9uKHQsaSl7cmV0dXJuIHRoaXMu",
+"X2hhbmRsZXJzXz10aGlzLl9oYW5kbGVyc198fHt9LHZvaWQgMD09PXQ/dGhpcy5f",
+"aGFuZGxlcnNfPXt9OnZvaWQgMD09PWk/dGhpcy5faGFuZGxlcnNfW3RdPW51bGw6",
+"dGhpcy5faGFuZGxlcnNfW3RdJiYwPD10aGlzLl9oYW5kbGVyc19bdF0uaW5kZXhP",
+"ZihpKSYmdGhpcy5faGFuZGxlcnNfW3RdLnNwbGljZSh0aGlzLl9oYW5kbGVyc19b",
+"dF0uaW5kZXhPZihpKSwxKSx0aGlzfSxPLnByb3RvdHlwZS50cmlnZ2VyPWZ1bmN0",
+"aW9uKHQsaSl7dmFyIGUsbz10aGlzLG49dC5zcGxpdCgvWyAsXSsvZyk7by5faGFu",
+"ZGxlcnNfPW8uX2hhbmRsZXJzX3x8e307Zm9yKHZhciBzPTA7czxuLmxlbmd0aDtz",
+"Kz0xKWU9bltzXSxvLl9oYW5kbGVyc19bZV0mJm8uX2hhbmRsZXJzX1tlXS5sZW5n",
+"dGgmJm8uX2hhbmRsZXJzX1tlXS5mb3JFYWNoKGZ1bmN0aW9uKHQpe3QuY2FsbChv",
+"LHt0eXBlOmUsdGFyZ2V0Om99LGkpfSl9LE8ucHJvdG90eXBlLmNvbmZpZz1mdW5j",
+"dGlvbih0KXt0aGlzLm9wdGlvbnM9dGhpcy5kZWZhdWx0c3x8e30sdCYmKHRoaXMu",
+"b3B0aW9ucz1mdW5jdGlvbih0LGkpe3ZhciBlLG89e307Zm9yKGUgaW4gdCl0Lmhh",
+"c093blByb3BlcnR5KGUpJiZpLmhhc093blByb3BlcnR5KGUpP29bZV09aVtlXTp0",
+"Lmhhc093blByb3BlcnR5KGUpJiYob1tlXT10W2VdKTtyZXR1cm4gb30odGhpcy5v",
+"cHRpb25zLHQpKX0sTy5wcm90b3R5cGUuYmluZEV2dD1mdW5jdGlvbih0LGkpe3Zh",
+"ciBlPXRoaXM7cmV0dXJuIGUuX2RvbUhhbmRsZXJzXz1lLl9kb21IYW5kbGVyc198",
+"fHt9LGUuX2RvbUhhbmRsZXJzX1tpXT1mdW5jdGlvbigpeyJmdW5jdGlvbiI9PXR5",
+"cGVvZiBlWyJvbiIraV0/ZVsib24iK2ldLmFwcGx5KGUsYXJndW1lbnRzKTpjb25z",
+"b2xlLndhcm4oJ1tXQVJOSU5HXSA6IE1pc3NpbmcgIm9uJytpKyciIGhhbmRsZXIu",
+"Jyl9LHModCx1W2ldLGUuX2RvbUhhbmRsZXJzX1tpXSkseFtpXSYmcyh0LHhbaV0s",
+"ZS5fZG9tSGFuZGxlcnNfW2ldKSxlfSxPLnByb3RvdHlwZS51bmJpbmRFdnQ9ZnVu",
+"Y3Rpb24odCxpKXtyZXR1cm4gdGhpcy5fZG9tSGFuZGxlcnNfPXRoaXMuX2RvbUhh",
+"bmRsZXJzX3x8e30sbyh0LHVbaV0sdGhpcy5fZG9tSGFuZGxlcnNfW2ldKSx4W2ld",
+"JiZvKHQseFtpXSx0aGlzLl9kb21IYW5kbGVyc19baV0pLGRlbGV0ZSB0aGlzLl9k",
+"b21IYW5kbGVyc19baV0sdGhpc307eT1PO2Z1bmN0aW9uIHcodCxpKXtyZXR1cm4g",
+"dGhpcy5pZGVudGlmaWVyPWkuaWRlbnRpZmllcix0aGlzLnBvc2l0aW9uPWkucG9z",
+"aXRpb24sdGhpcy5mcm9udFBvc2l0aW9uPWkuZnJvbnRQb3NpdGlvbix0aGlzLmNv",
+"bGxlY3Rpb249dCx0aGlzLmRlZmF1bHRzPXtzaXplOjEwMCx0aHJlc2hvbGQ6LjEs",
+"Y29sb3I6IndoaXRlIixmYWRlVGltZToyNTAsZGF0YU9ubHk6ITEscmVzdEpveXN0",
+"aWNrOiEwLHJlc3RPcGFjaXR5Oi41LG1vZGU6ImR5bmFtaWMiLHpvbmU6ZG9jdW1l",
+"bnQuYm9keSxsb2NrWDohMSxsb2NrWTohMSxzaGFwZToiY2lyY2xlIn0sdGhpcy5j",
+"b25maWcoaSksImR5bmFtaWMiPT09dGhpcy5vcHRpb25zLm1vZGUmJih0aGlzLm9w",
+"dGlvbnMucmVzdE9wYWNpdHk9MCksdGhpcy5pZD13LmlkLHcuaWQrPTEsdGhpcy5i",
+"dWlsZEVsKCkuc3R5bGl6ZSgpLHRoaXMuaW5zdGFuY2U9e2VsOnRoaXMudWkuZWws",
+"b246dGhpcy5vbi5iaW5kKHRoaXMpLG9mZjp0aGlzLm9mZi5iaW5kKHRoaXMpLHNo",
+"b3c6dGhpcy5zaG93LmJpbmQodGhpcyksaGlkZTp0aGlzLmhpZGUuYmluZCh0aGlz",
+"KSxhZGQ6dGhpcy5hZGRUb0RvbS5iaW5kKHRoaXMpLHJlbW92ZTp0aGlzLnJlbW92",
+"ZUZyb21Eb20uYmluZCh0aGlzKSxkZXN0cm95OnRoaXMuZGVzdHJveS5iaW5kKHRo",
+"aXMpLHNldFBvc2l0aW9uOnRoaXMuc2V0UG9zaXRpb24uYmluZCh0aGlzKSxyZXNl",
+"dERpcmVjdGlvbjp0aGlzLnJlc2V0RGlyZWN0aW9uLmJpbmQodGhpcyksY29tcHV0",
+"ZURpcmVjdGlvbjp0aGlzLmNvbXB1dGVEaXJlY3Rpb24uYmluZCh0aGlzKSx0cmln",
+"Z2VyOnRoaXMudHJpZ2dlci5iaW5kKHRoaXMpLHBvc2l0aW9uOnRoaXMucG9zaXRp",
+"b24sZnJvbnRQb3NpdGlvbjp0aGlzLmZyb250UG9zaXRpb24sdWk6dGhpcy51aSxp",
+"ZGVudGlmaWVyOnRoaXMuaWRlbnRpZmllcixpZDp0aGlzLmlkLG9wdGlvbnM6dGhp",
+"cy5vcHRpb25zfSx0aGlzLmluc3RhbmNlfXcucHJvdG90eXBlPW5ldyB5LCh3LmNv",
+"bnN0cnVjdG9yPXcpLmlkPTAsdy5wcm90b3R5cGUuYnVpbGRFbD1mdW5jdGlvbih0",
+"KXtyZXR1cm4gdGhpcy51aT17fSx0aGlzLm9wdGlvbnMuZGF0YU9ubHl8fCh0aGlz",
+"LnVpLmVsPWRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoImRpdiIpLHRoaXMudWkuYmFj",
+"az1kb2N1bWVudC5jcmVhdGVFbGVtZW50KCJkaXYiKSx0aGlzLnVpLmZyb250PWRv",
+"Y3VtZW50LmNyZWF0ZUVsZW1lbnQoImRpdiIpLHRoaXMudWkuZWwuY2xhc3NOYW1l",
+"PSJuaXBwbGUgY29sbGVjdGlvbl8iK3RoaXMuY29sbGVjdGlvbi5pZCx0aGlzLnVp",
+"LmJhY2suY2xhc3NOYW1lPSJiYWNrIix0aGlzLnVpLmZyb250LmNsYXNzTmFtZT0i",
+"ZnJvbnQiLHRoaXMudWkuZWwuc2V0QXR0cmlidXRlKCJpZCIsIm5pcHBsZV8iK3Ro",
+"aXMuY29sbGVjdGlvbi5pZCsiXyIrdGhpcy5pZCksdGhpcy51aS5lbC5hcHBlbmRD",
+"aGlsZCh0aGlzLnVpLmJhY2spLHRoaXMudWkuZWwuYXBwZW5kQ2hpbGQodGhpcy51",
+"aS5mcm9udCkpLHRoaXN9LHcucHJvdG90eXBlLnN0eWxpemU9ZnVuY3Rpb24oKXtp",
+"Zih0aGlzLm9wdGlvbnMuZGF0YU9ubHkpcmV0dXJuIHRoaXM7dmFyIHQ9dGhpcy5v",
+"cHRpb25zLmZhZGVUaW1lKyJtcyIsaT1mdW5jdGlvbigpe3ZhciB0LGk9YygiYm9y",
+"ZGVyUmFkaXVzIik7Zm9yKHQgaW4gaSlpLmhhc093blByb3BlcnR5KHQpJiYoaVt0",
+"XT0iNTAlIik7cmV0dXJuIGl9KCksdD1hKCJ0cmFuc2l0aW9uIiwib3BhY2l0eSIs",
+"dCksZT17fTtyZXR1cm4gZS5lbD17cG9zaXRpb246ImFic29sdXRlIixvcGFjaXR5",
+"OnRoaXMub3B0aW9ucy5yZXN0T3BhY2l0eSxkaXNwbGF5OiJibG9jayIsekluZGV4",
+"Ojk5OX0sZS5iYWNrPXtwb3NpdGlvbjoiYWJzb2x1dGUiLGRpc3BsYXk6ImJsb2Nr",
+"Iix3aWR0aDp0aGlzLm9wdGlvbnMuc2l6ZSsicHgiLGhlaWdodDp0aGlzLm9wdGlv",
+"bnMuc2l6ZSsicHgiLG1hcmdpbkxlZnQ6LXRoaXMub3B0aW9ucy5zaXplLzIrInB4",
+"IixtYXJnaW5Ub3A6LXRoaXMub3B0aW9ucy5zaXplLzIrInB4IixiYWNrZ3JvdW5k",
+"OnRoaXMub3B0aW9ucy5jb2xvcixvcGFjaXR5OiIuNSJ9LGUuZnJvbnQ9e3dpZHRo",
+"OnRoaXMub3B0aW9ucy5zaXplLzIrInB4IixoZWlnaHQ6dGhpcy5vcHRpb25zLnNp",
+"emUvMisicHgiLHBvc2l0aW9uOiJhYnNvbHV0ZSIsZGlzcGxheToiYmxvY2siLG1h",
+"cmdpbkxlZnQ6LXRoaXMub3B0aW9ucy5zaXplLzQrInB4IixtYXJnaW5Ub3A6LXRo",
+"aXMub3B0aW9ucy5zaXplLzQrInB4IixiYWNrZ3JvdW5kOnRoaXMub3B0aW9ucy5j",
+"b2xvcixvcGFjaXR5OiIuNSIsdHJhbnNmb3JtOiJ0cmFuc2xhdGUoMHB4LCAwcHgp",
+"In0sbChlLmVsLHQpLCJjaXJjbGUiPT09dGhpcy5vcHRpb25zLnNoYXBlJiZsKGUu",
+"YmFjayxpKSxsKGUuZnJvbnQsaSksdGhpcy5hcHBseVN0eWxlcyhlKSx0aGlzfSx3",
+"LnByb3RvdHlwZS5hcHBseVN0eWxlcz1mdW5jdGlvbih0KXtmb3IodmFyIGkgaW4g",
+"dGhpcy51aSlpZih0aGlzLnVpLmhhc093blByb3BlcnR5KGkpKWZvcih2YXIgZSBp",
+"biB0W2ldKXRoaXMudWlbaV0uc3R5bGVbZV09dFtpXVtlXTtyZXR1cm4gdGhpc30s",
+"dy5wcm90b3R5cGUuYWRkVG9Eb209ZnVuY3Rpb24oKXtyZXR1cm4gdGhpcy5vcHRp",
+"b25zLmRhdGFPbmx5fHxkb2N1bWVudC5ib2R5LmNvbnRhaW5zKHRoaXMudWkuZWwp",
+"fHx0aGlzLm9wdGlvbnMuem9uZS5hcHBlbmRDaGlsZCh0aGlzLnVpLmVsKSx0aGlz",
+"fSx3LnByb3RvdHlwZS5yZW1vdmVGcm9tRG9tPWZ1bmN0aW9uKCl7cmV0dXJuIXRo",
+"aXMub3B0aW9ucy5kYXRhT25seSYmZG9jdW1lbnQuYm9keS5jb250YWlucyh0aGlz",
+"LnVpLmVsKSYmdGhpcy5vcHRpb25zLnpvbmUucmVtb3ZlQ2hpbGQodGhpcy51aS5l",
+"bCksdGhpc30sdy5wcm90b3R5cGUuZGVzdHJveT1mdW5jdGlvbigpe2NsZWFyVGlt",
+"ZW91dCh0aGlzLnJlbW92ZVRpbWVvdXQpLGNsZWFyVGltZW91dCh0aGlzLnNob3dU",
+"aW1lb3V0KSxjbGVhclRpbWVvdXQodGhpcy5yZXN0VGltZW91dCksdGhpcy50cmln",
+"Z2VyKCJkZXN0cm95ZWQiLHRoaXMuaW5zdGFuY2UpLHRoaXMucmVtb3ZlRnJvbURv",
+"bSgpLHRoaXMub2ZmKCl9LHcucHJvdG90eXBlLnNob3c9ZnVuY3Rpb24odCl7dmFy",
+"IGk9dGhpcztyZXR1cm4gaS5vcHRpb25zLmRhdGFPbmx5fHwoY2xlYXJUaW1lb3V0",
+"KGkucmVtb3ZlVGltZW91dCksY2xlYXJUaW1lb3V0KGkuc2hvd1RpbWVvdXQpLGNs",
+"ZWFyVGltZW91dChpLnJlc3RUaW1lb3V0KSxpLmFkZFRvRG9tKCksaS5yZXN0Q2Fs",
+"bGJhY2soKSxzZXRUaW1lb3V0KGZ1bmN0aW9uKCl7aS51aS5lbC5zdHlsZS5vcGFj",
+"aXR5PTF9LDApLGkuc2hvd1RpbWVvdXQ9c2V0VGltZW91dChmdW5jdGlvbigpe2ku",
+"dHJpZ2dlcigic2hvd24iLGkuaW5zdGFuY2UpLCJmdW5jdGlvbiI9PXR5cGVvZiB0",
+"JiZ0LmNhbGwodGhpcyl9LGkub3B0aW9ucy5mYWRlVGltZSkpLGl9LHcucHJvdG90",
+"eXBlLmhpZGU9ZnVuY3Rpb24oaSl7dmFyIHQsZSxvPXRoaXM7cmV0dXJuIG8ub3B0",
+"aW9ucy5kYXRhT25seXx8KG8udWkuZWwuc3R5bGUub3BhY2l0eT1vLm9wdGlvbnMu",
+"cmVzdE9wYWNpdHksY2xlYXJUaW1lb3V0KG8ucmVtb3ZlVGltZW91dCksY2xlYXJU",
+"aW1lb3V0KG8uc2hvd1RpbWVvdXQpLGNsZWFyVGltZW91dChvLnJlc3RUaW1lb3V0",
+"KSxvLnJlbW92ZVRpbWVvdXQ9c2V0VGltZW91dChmdW5jdGlvbigpe3ZhciB0PSJk",
+"eW5hbWljIj09PW8ub3B0aW9ucy5tb2RlPyJub25lIjoiYmxvY2siO28udWkuZWwu",
+"c3R5bGUuZGlzcGxheT10LCJmdW5jdGlvbiI9PXR5cGVvZiBpJiZpLmNhbGwobyks",
+"by50cmlnZ2VyKCJoaWRkZW4iLG8uaW5zdGFuY2UpfSxvLm9wdGlvbnMuZmFkZVRp",
+"bWUpLG8ub3B0aW9ucy5yZXN0Sm95c3RpY2smJih0PW8ub3B0aW9ucy5yZXN0Sm95",
+"c3RpY2ssKGU9e30pLng9ITA9PT10fHwhMSE9PXQueD8wOm8uaW5zdGFuY2UuZnJv",
+"bnRQb3NpdGlvbi54LGUueT0hMD09PXR8fCExIT09dC55PzA6by5pbnN0YW5jZS5m",
+"cm9udFBvc2l0aW9uLnksby5zZXRQb3NpdGlvbihpLGUpKSksb30sdy5wcm90b3R5",
+"cGUuc2V0UG9zaXRpb249ZnVuY3Rpb24odCxpKXt2YXIgZT10aGlzLGk9KGUuZnJv",
+"bnRQb3NpdGlvbj17eDppLngseTppLnl9LGUub3B0aW9ucy5mYWRlVGltZSsibXMi",
+"KSxvPXt9LGk9KG8uZnJvbnQ9YSgidHJhbnNpdGlvbiIsWyJ0cmFuc2Zvcm0iXSxp",
+"KSx7ZnJvbnQ6e319KTtpLmZyb250PXt0cmFuc2Zvcm06InRyYW5zbGF0ZSgiK2Uu",
+"ZnJvbnRQb3NpdGlvbi54KyJweCwiK2UuZnJvbnRQb3NpdGlvbi55KyJweCkifSxl",
+"LmFwcGx5U3R5bGVzKG8pLGUuYXBwbHlTdHlsZXMoaSksZS5yZXN0VGltZW91dD1z",
+"ZXRUaW1lb3V0KGZ1bmN0aW9uKCl7ImZ1bmN0aW9uIj09dHlwZW9mIHQmJnQuY2Fs",
+"bChlKSxlLnJlc3RDYWxsYmFjaygpfSxlLm9wdGlvbnMuZmFkZVRpbWUpfSx3LnBy",
+"b3RvdHlwZS5yZXN0Q2FsbGJhY2s9ZnVuY3Rpb24oKXt2YXIgdD17fTt0LmZyb250",
+"PWEoInRyYW5zaXRpb24iLCJub25lIiwiIiksdGhpcy5hcHBseVN0eWxlcyh0KSx0",
+"aGlzLnRyaWdnZXIoInJlc3RlZCIsdGhpcy5pbnN0YW5jZSl9LHcucHJvdG90eXBl",
+"LnJlc2V0RGlyZWN0aW9uPWZ1bmN0aW9uKCl7dGhpcy5kaXJlY3Rpb249e3g6ITEs",
+"eTohMSxhbmdsZTohMX19LHcucHJvdG90eXBlLmNvbXB1dGVEaXJlY3Rpb249ZnVu",
+"Y3Rpb24odCl7dmFyIGksZSxvLG49dC5hbmdsZS5yYWRpYW4scz1NYXRoLlBJLzQs",
+"cj1NYXRoLlBJLzI7aWYoczxuJiZuPDMqcyYmIXQubG9ja1g/aT0idXAiOi1zPG4m",
+"Jm48PXMmJiF0LmxvY2tZP2k9ImxlZnQiOjMqLXM8biYmbjw9LXMmJiF0LmxvY2tY",
+"P2k9ImRvd24iOnQubG9ja1l8fChpPSJyaWdodCIpLHQubG9ja1l8fChlPS1yPG4m",
+"Jm48cj8ibGVmdCI6InJpZ2h0IiksdC5sb2NrWHx8KG89MDxuPyJ1cCI6ImRvd24i",
+"KSx0LmZvcmNlPnRoaXMub3B0aW9ucy50aHJlc2hvbGQpe3ZhciBkLHA9e307Zm9y",
+"KGQgaW4gdGhpcy5kaXJlY3Rpb24pdGhpcy5kaXJlY3Rpb24uaGFzT3duUHJvcGVy",
+"dHkoZCkmJihwW2RdPXRoaXMuZGlyZWN0aW9uW2RdKTt2YXIgYT17fTtmb3IoZCBp",
+"biB0aGlzLmRpcmVjdGlvbj17eDplLHk6byxhbmdsZTppfSx0LmRpcmVjdGlvbj10",
+"aGlzLmRpcmVjdGlvbixwKXBbZF09PT10aGlzLmRpcmVjdGlvbltkXSYmKGFbZF09",
+"ITApO2lmKGEueCYmYS55JiZhLmFuZ2xlKXJldHVybiB0O2EueCYmYS55fHx0aGlz",
+"LnRyaWdnZXIoInBsYWluIix0KSxhLnh8fHRoaXMudHJpZ2dlcigicGxhaW46Iitl",
+"LHQpLGEueXx8dGhpcy50cmlnZ2VyKCJwbGFpbjoiK28sdCksYS5hbmdsZXx8dGhp",
+"cy50cmlnZ2VyKCJkaXIgZGlyOiIraSx0KX1lbHNlIHRoaXMucmVzZXREaXJlY3Rp",
+"b24oKTtyZXR1cm4gdH07dmFyIF89dztmdW5jdGlvbiBUKHQsaSl7dGhpcy5uaXBw",
+"bGVzPVtdLHRoaXMuaWRsZXM9W10sdGhpcy5hY3RpdmVzPVtdLHRoaXMuaWRzPVtd",
+"LHRoaXMucHJlc3N1cmVJbnRlcnZhbHM9e30sdGhpcy5tYW5hZ2VyPXQsdGhpcy5p",
+"ZD1ULmlkLFQuaWQrPTEsdGhpcy5kZWZhdWx0cz17em9uZTpkb2N1bWVudC5ib2R5",
+"LG11bHRpdG91Y2g6ITEsbWF4TnVtYmVyT2ZOaXBwbGVzOjEwLG1vZGU6ImR5bmFt",
+"aWMiLHBvc2l0aW9uOnt0b3A6MCxsZWZ0OjB9LGNhdGNoRGlzdGFuY2U6MjAwLHNp",
+"emU6MTAwLHRocmVzaG9sZDouMSxjb2xvcjoid2hpdGUiLGZhZGVUaW1lOjI1MCxk",
+"YXRhT25seTohMSxyZXN0Sm95c3RpY2s6ITAscmVzdE9wYWNpdHk6LjUsbG9ja1g6",
+"ITEsbG9ja1k6ITEsc2hhcGU6ImNpcmNsZSIsZHluYW1pY1BhZ2U6ITEsZm9sbG93",
+"OiExfSx0aGlzLmNvbmZpZyhpKSwic3RhdGljIiE9PXRoaXMub3B0aW9ucy5tb2Rl",
+"JiYic2VtaSIhPT10aGlzLm9wdGlvbnMubW9kZXx8KHRoaXMub3B0aW9ucy5tdWx0",
+"aXRvdWNoPSExKSx0aGlzLm9wdGlvbnMubXVsdGl0b3VjaHx8KHRoaXMub3B0aW9u",
+"cy5tYXhOdW1iZXJPZk5pcHBsZXM9MSk7dD1nZXRDb21wdXRlZFN0eWxlKHRoaXMu",
+"b3B0aW9ucy56b25lLnBhcmVudEVsZW1lbnQpO3JldHVybiB0JiYiZmxleCI9PT10",
+"LmRpc3BsYXkmJih0aGlzLnBhcmVudElzRmxleD0hMCksdGhpcy51cGRhdGVCb3go",
+"KSx0aGlzLnByZXBhcmVOaXBwbGVzKCksdGhpcy5iaW5kaW5ncygpLHRoaXMuYmVn",
+"aW4oKSx0aGlzLm5pcHBsZXN9VC5wcm90b3R5cGU9bmV3IHksKFQuY29uc3RydWN0",
+"b3I9VCkuaWQ9MCxULnByb3RvdHlwZS5wcmVwYXJlTmlwcGxlcz1mdW5jdGlvbigp",
+"e3ZhciBvPXRoaXMubmlwcGxlcztvLm9uPXRoaXMub24uYmluZCh0aGlzKSxvLm9m",
+"Zj10aGlzLm9mZi5iaW5kKHRoaXMpLG8ub3B0aW9ucz10aGlzLm9wdGlvbnMsby5k",
+"ZXN0cm95PXRoaXMuZGVzdHJveS5iaW5kKHRoaXMpLG8uaWRzPXRoaXMuaWRzLG8u",
+"aWQ9dGhpcy5pZCxvLnByb2Nlc3NPbk1vdmU9dGhpcy5wcm9jZXNzT25Nb3ZlLmJp",
+"bmQodGhpcyksby5wcm9jZXNzT25FbmQ9dGhpcy5wcm9jZXNzT25FbmQuYmluZCh0",
+"aGlzKSxvLmdldD1mdW5jdGlvbih0KXtpZih2b2lkIDA9PT10KXJldHVybiBvWzBd",
+"O2Zvcih2YXIgaT0wLGU9by5sZW5ndGg7aTxlO2krPTEpaWYob1tpXS5pZGVudGlm",
+"aWVyPT09dClyZXR1cm4gb1tpXTtyZXR1cm4hMX19LFQucHJvdG90eXBlLmJpbmRp",
+"bmdzPWZ1bmN0aW9uKCl7dGhpcy5iaW5kRXZ0KHRoaXMub3B0aW9ucy56b25lLCJz",
+"dGFydCIpLHRoaXMub3B0aW9ucy56b25lLnN0eWxlLnRvdWNoQWN0aW9uPSJub25l",
+"Iix0aGlzLm9wdGlvbnMuem9uZS5zdHlsZS5tc1RvdWNoQWN0aW9uPSJub25lIn0s",
+"VC5wcm90b3R5cGUuYmVnaW49ZnVuY3Rpb24oKXt2YXIgdD10aGlzLm9wdGlvbnM7",
+"InN0YXRpYyI9PT10Lm1vZGUmJigodD10aGlzLmNyZWF0ZU5pcHBsZSh0LnBvc2l0",
+"aW9uLHRoaXMubWFuYWdlci5nZXRJZGVudGlmaWVyKCkpKS5hZGQoKSx0aGlzLmlk",
+"bGVzLnB1c2godCkpfSxULnByb3RvdHlwZS5jcmVhdGVOaXBwbGU9ZnVuY3Rpb24o",
+"dCxpKXt2YXIgZT10aGlzLm1hbmFnZXIuc2Nyb2xsLG89e30sbj10aGlzLm9wdGlv",
+"bnMscz10aGlzLnBhcmVudElzRmxleD9lLng6ZS54K3RoaXMuYm94LmxlZnQscj10",
+"aGlzLnBhcmVudElzRmxleD9lLnk6ZS55K3RoaXMuYm94LnRvcCxzPSh0LngmJnQu",
+"eT9vPXt4OnQueC1zLHk6dC55LXJ9Oih0LnRvcHx8dC5yaWdodHx8dC5ib3R0b218",
+"fHQubGVmdCkmJigocz1kb2N1bWVudC5jcmVhdGVFbGVtZW50KCJESVYiKSkuc3R5",
+"bGUuZGlzcGxheT0iaGlkZGVuIixzLnN0eWxlLnRvcD10LnRvcCxzLnN0eWxlLnJp",
+"Z2h0PXQucmlnaHQscy5zdHlsZS5ib3R0b209dC5ib3R0b20scy5zdHlsZS5sZWZ0",
+"PXQubGVmdCxzLnN0eWxlLnBvc2l0aW9uPSJhYnNvbHV0ZSIsbi56b25lLmFwcGVu",
+"ZENoaWxkKHMpLHI9cy5nZXRCb3VuZGluZ0NsaWVudFJlY3QoKSxuLnpvbmUucmVt",
+"b3ZlQ2hpbGQocyksbz10LHQ9e3g6ci5sZWZ0K2UueCx5OnIudG9wK2UueX0pLG5l",
+"dyBfKHRoaXMse2NvbG9yOm4uY29sb3Isc2l6ZTpuLnNpemUsdGhyZXNob2xkOm4u",
+"dGhyZXNob2xkLGZhZGVUaW1lOm4uZmFkZVRpbWUsZGF0YU9ubHk6bi5kYXRhT25s",
+"eSxyZXN0Sm95c3RpY2s6bi5yZXN0Sm95c3RpY2sscmVzdE9wYWNpdHk6bi5yZXN0",
+"T3BhY2l0eSxtb2RlOm4ubW9kZSxpZGVudGlmaWVyOmkscG9zaXRpb246dCx6b25l",
+"Om4uem9uZSxmcm9udFBvc2l0aW9uOnt4OjAseTowfSxzaGFwZTpuLnNoYXBlfSkp",
+"O3JldHVybiBuLmRhdGFPbmx5fHwocChzLnVpLmVsLG8pLHAocy51aS5mcm9udCxz",
+"LmZyb250UG9zaXRpb24pKSx0aGlzLm5pcHBsZXMucHVzaChzKSx0aGlzLnRyaWdn",
+"ZXIoImFkZGVkICIrcy5pZGVudGlmaWVyKyI6YWRkZWQiLHMpLHRoaXMubWFuYWdl",
+"ci50cmlnZ2VyKCJhZGRlZCAiK3MuaWRlbnRpZmllcisiOmFkZGVkIixzKSx0aGlz",
+"LmJpbmROaXBwbGUocyksc30sVC5wcm90b3R5cGUudXBkYXRlQm94PWZ1bmN0aW9u",
+"KCl7dGhpcy5ib3g9dGhpcy5vcHRpb25zLnpvbmUuZ2V0Qm91bmRpbmdDbGllbnRS",
+"ZWN0KCl9LFQucHJvdG90eXBlLmJpbmROaXBwbGU9ZnVuY3Rpb24odCl7ZnVuY3Rp",
+"b24gaSh0LGkpe2U9dC50eXBlKyIgIitpLmlkKyI6Iit0LnR5cGUsby50cmlnZ2Vy",
+"KGUsaSl9dmFyIGUsbz10aGlzO3Qub24oImRlc3Ryb3llZCIsby5vbkRlc3Ryb3ll",
+"ZC5iaW5kKG8pKSx0Lm9uKCJzaG93biBoaWRkZW4gcmVzdGVkIGRpciBwbGFpbiIs",
+"aSksdC5vbigiZGlyOnVwIGRpcjpyaWdodCBkaXI6ZG93biBkaXI6bGVmdCIsaSks",
+"dC5vbigicGxhaW46dXAgcGxhaW46cmlnaHQgcGxhaW46ZG93biBwbGFpbjpsZWZ0",
+"IixpKX0sVC5wcm90b3R5cGUucHJlc3N1cmVGbj1mdW5jdGlvbihpLGUsdCl7dmFy",
+"IG89dGhpcyxuPTA7Y2xlYXJJbnRlcnZhbChvLnByZXNzdXJlSW50ZXJ2YWxzW3Rd",
+"KSxvLnByZXNzdXJlSW50ZXJ2YWxzW3RdPXNldEludGVydmFsKGZ1bmN0aW9uKCl7",
+"dmFyIHQ9aS5mb3JjZXx8aS5wcmVzc3VyZXx8aS53ZWJraXRGb3JjZXx8MDt0IT09",
+"biYmKGUudHJpZ2dlcigicHJlc3N1cmUiLHQpLG8udHJpZ2dlcigicHJlc3N1cmUg",
+"IitlLmlkZW50aWZpZXIrIjpwcmVzc3VyZSIsdCksbj10KX0uYmluZChvKSwxMDAp",
+"fSxULnByb3RvdHlwZS5vbnN0YXJ0PWZ1bmN0aW9uKGUpe3ZhciBvPXRoaXMsaT1v",
+"Lm9wdGlvbnMsbj1lO3JldHVybiBlPXIoZSksby51cGRhdGVCb3goKSxoKGUsZnVu",
+"Y3Rpb24odCl7by5hY3RpdmVzLmxlbmd0aDxpLm1heE51bWJlck9mTmlwcGxlcz9v",
+"LnByb2Nlc3NPblN0YXJ0KHQpOm4udHlwZS5tYXRjaCgvXnRvdWNoLykmJihPYmpl",
+"Y3Qua2V5cyhvLm1hbmFnZXIuaWRzKS5mb3JFYWNoKGZ1bmN0aW9uKGkpe3ZhciB0",
+"O09iamVjdC52YWx1ZXMobi50b3VjaGVzKS5maW5kSW5kZXgoZnVuY3Rpb24odCl7",
+"cmV0dXJuIHQuaWRlbnRpZmllcj09PWl9KTwwJiYoKHQ9W2VbMF1dKS5pZGVudGlm",
+"aWVyPWksby5wcm9jZXNzT25FbmQodCkpfSksby5hY3RpdmVzLmxlbmd0aDxpLm1h",
+"eE51bWJlck9mTmlwcGxlcyYmby5wcm9jZXNzT25TdGFydCh0KSl9KSxvLm1hbmFn",
+"ZXIuYmluZERvY3VtZW50KCksITF9LFQucHJvdG90eXBlLnByb2Nlc3NPblN0YXJ0",
+"PWZ1bmN0aW9uKGkpe2Z1bmN0aW9uIHQodCl7dC50cmlnZ2VyKCJzdGFydCIsdCks",
+"ZS50cmlnZ2VyKCJzdGFydCAiK3QuaWQrIjpzdGFydCIsdCksdC5zaG93KCksMDxz",
+"JiZlLnByZXNzdXJlRm4oaSx0LHQuaWRlbnRpZmllciksZS5wcm9jZXNzT25Nb3Zl",
+"KGkpfXZhciBlPXRoaXMsbz1lLm9wdGlvbnMsbj1lLm1hbmFnZXIuZ2V0SWRlbnRp",
+"ZmllcihpKSxzPWkuZm9yY2V8fGkucHJlc3N1cmV8fGkud2Via2l0Rm9yY2V8fDAs",
+"cj17eDppLnBhZ2VYLHk6aS5wYWdlWX0sZD1lLmdldE9yQ3JlYXRlKG4scik7ZC5p",
+"ZGVudGlmaWVyIT09biYmZS5tYW5hZ2VyLnJlbW92ZUlkZW50aWZpZXIoZC5pZGVu",
+"dGlmaWVyKSxkLmlkZW50aWZpZXI9bjtpZigwPD0obj1lLmlkbGVzLmluZGV4T2Yo",
+"ZCkpJiZlLmlkbGVzLnNwbGljZShuLDEpLGUuYWN0aXZlcy5wdXNoKGQpLGUuaWRz",
+"LnB1c2goZC5pZGVudGlmaWVyKSwic2VtaSIhPT1vLm1vZGUpdChkKTtlbHNle2lm",
+"KCEodihyLGQucG9zaXRpb24pPD1vLmNhdGNoRGlzdGFuY2UpKXJldHVybiBkLmRl",
+"c3Ryb3koKSx2b2lkIGUucHJvY2Vzc09uU3RhcnQoaSk7dChkKX1yZXR1cm4gZH0s",
+"VC5wcm90b3R5cGUuZ2V0T3JDcmVhdGU9ZnVuY3Rpb24odCxpKXt2YXIgZSxvPXRo",
+"aXMub3B0aW9ucztyZXR1cm4vKHNlbWl8c3RhdGljKS8udGVzdChvLm1vZGUpPyhl",
+"PXRoaXMuaWRsZXNbMF0pPyh0aGlzLmlkbGVzLnNwbGljZSgwLDEpLGUpOiJzZW1p",
+"Ij09PW8ubW9kZT90aGlzLmNyZWF0ZU5pcHBsZShpLHQpOihjb25zb2xlLndhcm4o",
+"IkNvdWRsbid0IGZpbmQgdGhlIG5lZWRlZCBuaXBwbGUuIiksITEpOnRoaXMuY3Jl",
+"YXRlTmlwcGxlKGksdCl9LFQucHJvdG90eXBlLnByb2Nlc3NPbk1vdmU9ZnVuY3Rp",
+"b24odCl7dmFyIGk9dGhpcy5vcHRpb25zLGU9dGhpcy5tYW5hZ2VyLmdldElkZW50",
+"aWZpZXIodCksbz10aGlzLm5pcHBsZXMuZ2V0KGUpLG49dGhpcy5tYW5hZ2VyLnNj",
+"cm9sbDtpZihzPXQsaXNOYU4ocy5idXR0b25zKT8wIT09cy5wcmVzc3VyZTowIT09",
+"cy5idXR0b25zKXtpZighbylyZXR1cm4gY29uc29sZS5lcnJvcigiRm91bmQgem9t",
+"YmllIGpveXN0aWNrIHdpdGggSUQgIitlKSx2b2lkIHRoaXMubWFuYWdlci5yZW1v",
+"dmVJZGVudGlmaWVyKGUpO2kuZHluYW1pY1BhZ2UmJihzPW8uZWwuZ2V0Qm91bmRp",
+"bmdDbGllbnRSZWN0KCksby5wb3NpdGlvbj17eDpuLngrcy5sZWZ0LHk6bi55K3Mu",
+"dG9wfSksby5pZGVudGlmaWVyPWU7dmFyIHM9by5vcHRpb25zLnNpemUvMixlPXt4",
+"OnQucGFnZVgseTp0LnBhZ2VZfTtpLmxvY2tYJiYoZS55PW8ucG9zaXRpb24ueSks",
+"aS5sb2NrWSYmKGUueD1vLnBvc2l0aW9uLngpO3ZhciByLGQscCxhLGMsbD12KGUs",
+"by5wb3NpdGlvbiksaD0oaD1lLHU9by5wb3NpdGlvbixmPXUueC1oLngsdT11Lnkt",
+"aC55LE1hdGguYXRhbjIodSxmKSooMTgwL01hdGguUEkpKSx1PWIoaCksZj1sL3Ms",
+"eT17ZGlzdGFuY2U6bCxwb3NpdGlvbjplfSxtPSgiY2lyY2xlIj09PW8ub3B0aW9u",
+"cy5zaGFwZT8ocj1NYXRoLm1pbihsLHMpLGQ9by5wb3NpdGlvbixwPXIsYz17eDow",
+"LHk6MH0sYT1iKGgpLGMueD1kLngtcCpNYXRoLmNvcyhhKSxjLnk9ZC55LXAqTWF0",
+"aC5zaW4oYSksZD1jKToocD1lLGE9by5wb3NpdGlvbixjPXMsZD17eDpNYXRoLm1p",
+"bihNYXRoLm1heChwLngsYS54LWMpLGEueCtjKSx5Ok1hdGgubWluKE1hdGgubWF4",
+"KHAueSxhLnktYyksYS55K2MpfSxyPXYoZCxvLnBvc2l0aW9uKSksaS5mb2xsb3c/",
+"czxsJiYobT1lLngtZC54LGc9ZS55LWQueSxvLnBvc2l0aW9uLngrPW0sby5wb3Np",
+"dGlvbi55Kz1nLG8uZWwuc3R5bGUudG9wPW8ucG9zaXRpb24ueS0odGhpcy5ib3gu",
+"dG9wK24ueSkrInB4IixvLmVsLnN0eWxlLmxlZnQ9by5wb3NpdGlvbi54LSh0aGlz",
+"LmJveC5sZWZ0K24ueCkrInB4IixsPXYoZSxvLnBvc2l0aW9uKSk6KGU9ZCxsPXIp",
+"LGUueC1vLnBvc2l0aW9uLngpLGc9ZS55LW8ucG9zaXRpb24ueSxuPShvLmZyb250",
+"UG9zaXRpb249e3g6bSx5Omd9LGkuZGF0YU9ubHl8fChvLnVpLmZyb250LnN0eWxl",
+"LnRyYW5zZm9ybT0idHJhbnNsYXRlKCIrbSsicHgsIitnKyJweCkiKSx7aWRlbnRp",
+"ZmllcjpvLmlkZW50aWZpZXIscG9zaXRpb246ZSxmb3JjZTpmLHByZXNzdXJlOnQu",
+"Zm9yY2V8fHQucHJlc3N1cmV8fHQud2Via2l0Rm9yY2V8fDAsZGlzdGFuY2U6bCxh",
+"bmdsZTp7cmFkaWFuOnUsZGVncmVlOmh9LHZlY3Rvcjp7eDptL3MseTotZy9zfSxy",
+"YXc6eSxpbnN0YW5jZTpvLGxvY2tYOmkubG9ja1gsbG9ja1k6aS5sb2NrWX0pOyhu",
+"PW8uY29tcHV0ZURpcmVjdGlvbihuKSkuYW5nbGU9e3JhZGlhbjpiKDE4MC1oKSxk",
+"ZWdyZWU6MTgwLWh9LG8udHJpZ2dlcigibW92ZSIsbiksdGhpcy50cmlnZ2VyKCJt",
+"b3ZlICIrby5pZCsiOm1vdmUiLG4pfWVsc2UgdGhpcy5wcm9jZXNzT25FbmQodCl9",
+"LFQucHJvdG90eXBlLnByb2Nlc3NPbkVuZD1mdW5jdGlvbih0KXt2YXIgaT10aGlz",
+"LGU9aS5vcHRpb25zLHQ9aS5tYW5hZ2VyLmdldElkZW50aWZpZXIodCksbz1pLm5p",
+"cHBsZXMuZ2V0KHQpLHQ9aS5tYW5hZ2VyLnJlbW92ZUlkZW50aWZpZXIoby5pZGVu",
+"dGlmaWVyKTtvJiYoZS5kYXRhT25seXx8by5oaWRlKGZ1bmN0aW9uKCl7ImR5bmFt",
+"aWMiPT09ZS5tb2RlJiYoby50cmlnZ2VyKCJyZW1vdmVkIixvKSxpLnRyaWdnZXIo",
+"InJlbW92ZWQgIitvLmlkKyI6cmVtb3ZlZCIsbyksaS5tYW5hZ2VyLnRyaWdnZXIo",
+"InJlbW92ZWQgIitvLmlkKyI6cmVtb3ZlZCIsbyksby5kZXN0cm95KCkpfSksY2xl",
+"YXJJbnRlcnZhbChpLnByZXNzdXJlSW50ZXJ2YWxzW28uaWRlbnRpZmllcl0pLG8u",
+"cmVzZXREaXJlY3Rpb24oKSxvLnRyaWdnZXIoImVuZCIsbyksaS50cmlnZ2VyKCJl",
+"bmQgIitvLmlkKyI6ZW5kIixvKSwwPD1pLmlkcy5pbmRleE9mKG8uaWRlbnRpZmll",
+"cikmJmkuaWRzLnNwbGljZShpLmlkcy5pbmRleE9mKG8uaWRlbnRpZmllciksMSks",
+"MDw9aS5hY3RpdmVzLmluZGV4T2YobykmJmkuYWN0aXZlcy5zcGxpY2UoaS5hY3Rp",
+"dmVzLmluZGV4T2YobyksMSksLyhzZW1pfHN0YXRpYykvLnRlc3QoZS5tb2RlKT9p",
+"LmlkbGVzLnB1c2gobyk6MDw9aS5uaXBwbGVzLmluZGV4T2YobykmJmkubmlwcGxl",
+"cy5zcGxpY2UoaS5uaXBwbGVzLmluZGV4T2YobyksMSksaS5tYW5hZ2VyLnVuYmlu",
+"ZERvY3VtZW50KCksLyhzZW1pfHN0YXRpYykvLnRlc3QoZS5tb2RlKSYmKGkubWFu",
+"YWdlci5pZHNbdC5pZF09dC5pZGVudGlmaWVyKSl9LFQucHJvdG90eXBlLm9uRGVz",
+"dHJveWVkPWZ1bmN0aW9uKHQsaSl7MDw9dGhpcy5uaXBwbGVzLmluZGV4T2YoaSkm",
+"JnRoaXMubmlwcGxlcy5zcGxpY2UodGhpcy5uaXBwbGVzLmluZGV4T2YoaSksMSks",
+"MDw9dGhpcy5hY3RpdmVzLmluZGV4T2YoaSkmJnRoaXMuYWN0aXZlcy5zcGxpY2Uo",
+"dGhpcy5hY3RpdmVzLmluZGV4T2YoaSksMSksMDw9dGhpcy5pZGxlcy5pbmRleE9m",
+"KGkpJiZ0aGlzLmlkbGVzLnNwbGljZSh0aGlzLmlkbGVzLmluZGV4T2YoaSksMSks",
+"MDw9dGhpcy5pZHMuaW5kZXhPZihpLmlkZW50aWZpZXIpJiZ0aGlzLmlkcy5zcGxp",
+"Y2UodGhpcy5pZHMuaW5kZXhPZihpLmlkZW50aWZpZXIpLDEpLHRoaXMubWFuYWdl",
+"ci5yZW1vdmVJZGVudGlmaWVyKGkuaWRlbnRpZmllciksdGhpcy5tYW5hZ2VyLnVu",
+"YmluZERvY3VtZW50KCl9LFQucHJvdG90eXBlLmRlc3Ryb3k9ZnVuY3Rpb24oKXtm",
+"b3IodmFyIHQgaW4gdGhpcy51bmJpbmRFdnQodGhpcy5vcHRpb25zLnpvbmUsInN0",
+"YXJ0IiksdGhpcy5uaXBwbGVzLmZvckVhY2goZnVuY3Rpb24odCl7dC5kZXN0cm95",
+"KCl9KSx0aGlzLnByZXNzdXJlSW50ZXJ2YWxzKXRoaXMucHJlc3N1cmVJbnRlcnZh",
+"bHMuaGFzT3duUHJvcGVydHkodCkmJmNsZWFySW50ZXJ2YWwodGhpcy5wcmVzc3Vy",
+"ZUludGVydmFsc1t0XSk7dGhpcy50cmlnZ2VyKCJkZXN0cm95ZWQiLHRoaXMubmlw",
+"cGxlcyksdGhpcy5tYW5hZ2VyLnVuYmluZERvY3VtZW50KCksdGhpcy5vZmYoKX07",
+"dmFyIGs9VDtmdW5jdGlvbiBQKHQpe2Z1bmN0aW9uIGkoKXt2YXIgaTtvLmNvbGxl",
+"Y3Rpb25zLmZvckVhY2goZnVuY3Rpb24odCl7dC5mb3JFYWNoKGZ1bmN0aW9uKHQp",
+"e2k9dC5lbC5nZXRCb3VuZGluZ0NsaWVudFJlY3QoKSx0LnBvc2l0aW9uPXt4Om8u",
+"c2Nyb2xsLngraS5sZWZ0LHk6by5zY3JvbGwueStpLnRvcH19KX0pfWZ1bmN0aW9u",
+"IGUoKXtvLnNjcm9sbD1kKCl9dmFyIG89dGhpcztvLmlkcz17fSxvLmluZGV4PTAs",
+"by5jb2xsZWN0aW9ucz1bXSxvLnNjcm9sbD1kKCksby5jb25maWcodCksby5wcmVw",
+"YXJlQ29sbGVjdGlvbnMoKSxzKHdpbmRvdywicmVzaXplIixmdW5jdGlvbigpe24o",
+"aSl9KTtyZXR1cm4gcyh3aW5kb3csInNjcm9sbCIsZnVuY3Rpb24oKXtuKGUpfSks",
+"by5jb2xsZWN0aW9uc31QLnByb3RvdHlwZT1uZXcgeSwoUC5jb25zdHJ1Y3Rvcj1Q",
+"KS5wcm90b3R5cGUucHJlcGFyZUNvbGxlY3Rpb25zPWZ1bmN0aW9uKCl7dmFyIHQ9",
+"dGhpczt0LmNvbGxlY3Rpb25zLmNyZWF0ZT10LmNyZWF0ZS5iaW5kKHQpLHQuY29s",
+"bGVjdGlvbnMub249dC5vbi5iaW5kKHQpLHQuY29sbGVjdGlvbnMub2ZmPXQub2Zm",
+"LmJpbmQodCksdC5jb2xsZWN0aW9ucy5kZXN0cm95PXQuZGVzdHJveS5iaW5kKHQp",
+"LHQuY29sbGVjdGlvbnMuZ2V0PWZ1bmN0aW9uKGkpe3ZhciBlO3JldHVybiB0LmNv",
+"bGxlY3Rpb25zLmV2ZXJ5KGZ1bmN0aW9uKHQpe3JldHVybiEoZT10LmdldChpKSl9",
+"KSxlfX0sUC5wcm90b3R5cGUuY3JlYXRlPWZ1bmN0aW9uKHQpe3JldHVybiB0aGlz",
+"LmNyZWF0ZUNvbGxlY3Rpb24odCl9LFAucHJvdG90eXBlLmNyZWF0ZUNvbGxlY3Rp",
+"b249ZnVuY3Rpb24odCl7dD1uZXcgayh0aGlzLHQpO3JldHVybiB0aGlzLmJpbmRD",
+"b2xsZWN0aW9uKHQpLHRoaXMuY29sbGVjdGlvbnMucHVzaCh0KSx0fSxQLnByb3Rv",
+"dHlwZS5iaW5kQ29sbGVjdGlvbj1mdW5jdGlvbih0KXtmdW5jdGlvbiBpKHQsaSl7",
+"ZT10LnR5cGUrIiAiK2kuaWQrIjoiK3QudHlwZSxvLnRyaWdnZXIoZSxpKX12YXIg",
+"ZSxvPXRoaXM7dC5vbigiZGVzdHJveWVkIixvLm9uRGVzdHJveWVkLmJpbmQobykp",
+"LHQub24oInNob3duIGhpZGRlbiByZXN0ZWQgZGlyIHBsYWluIixpKSx0Lm9uKCJk",
+"aXI6dXAgZGlyOnJpZ2h0IGRpcjpkb3duIGRpcjpsZWZ0IixpKSx0Lm9uKCJwbGFp",
+"bjp1cCBwbGFpbjpyaWdodCBwbGFpbjpkb3duIHBsYWluOmxlZnQiLGkpfSxQLnBy",
+"b3RvdHlwZS5iaW5kRG9jdW1lbnQ9ZnVuY3Rpb24oKXt0aGlzLmJpbmRlZHx8KHRo",
+"aXMuYmluZEV2dChkb2N1bWVudCwibW92ZSIpLmJpbmRFdnQoZG9jdW1lbnQsImVu",
+"ZCIpLHRoaXMuYmluZGVkPSEwKX0sUC5wcm90b3R5cGUudW5iaW5kRG9jdW1lbnQ9",
+"ZnVuY3Rpb24odCl7T2JqZWN0LmtleXModGhpcy5pZHMpLmxlbmd0aCYmITAhPT10",
+"fHwodGhpcy51bmJpbmRFdnQoZG9jdW1lbnQsIm1vdmUiKS51bmJpbmRFdnQoZG9j",
+"dW1lbnQsImVuZCIpLHRoaXMuYmluZGVkPSExKX0sUC5wcm90b3R5cGUuZ2V0SWRl",
+"bnRpZmllcj1mdW5jdGlvbih0KXt2YXIgaTtyZXR1cm4gdD92b2lkIDA9PT0oaT12",
+"b2lkIDA9PT10LmlkZW50aWZpZXI/dC5wb2ludGVySWQ6dC5pZGVudGlmaWVyKSYm",
+"KGk9dGhpcy5sYXRlc3R8fDApOmk9dGhpcy5pbmRleCx2b2lkIDA9PT10aGlzLmlk",
+"c1tpXSYmKHRoaXMuaWRzW2ldPXRoaXMuaW5kZXgsdGhpcy5pbmRleCs9MSksdGhp",
+"cy5sYXRlc3Q9aSx0aGlzLmlkc1tpXX0sUC5wcm90b3R5cGUucmVtb3ZlSWRlbnRp",
+"Zmllcj1mdW5jdGlvbih0KXt2YXIgaSxlPXt9O2ZvcihpIGluIHRoaXMuaWRzKWlm",
+"KHRoaXMuaWRzW2ldPT09dCl7ZS5pZD1pLGUuaWRlbnRpZmllcj10aGlzLmlkc1tp",
+"XSxkZWxldGUgdGhpcy5pZHNbaV07YnJlYWt9cmV0dXJuIGV9LFAucHJvdG90eXBl",
+"Lm9ubW92ZT1mdW5jdGlvbih0KXtyZXR1cm4gdGhpcy5vbkFueSgibW92ZSIsdCks",
+"ITF9LFAucHJvdG90eXBlLm9uZW5kPWZ1bmN0aW9uKHQpe3JldHVybiB0aGlzLm9u",
+"QW55KCJlbmQiLHQpLCExfSxQLnByb3RvdHlwZS5vbmNhbmNlbD1mdW5jdGlvbih0",
+"KXtyZXR1cm4gdGhpcy5vbkFueSgiZW5kIix0KSwhMX0sUC5wcm90b3R5cGUub25B",
+"bnk9ZnVuY3Rpb24odCxpKXt2YXIgZSxvPXRoaXMsbj0icHJvY2Vzc09uIit0LmNo",
+"YXJBdCgwKS50b1VwcGVyQ2FzZSgpK3Quc2xpY2UoMSk7aT1yKGkpO3JldHVybiBo",
+"KGksZnVuY3Rpb24odCl7ZT1vLmdldElkZW50aWZpZXIodCksaChvLmNvbGxlY3Rp",
+"b25zLGZ1bmN0aW9uKHQsaSxlKXswPD1lLmlkcy5pbmRleE9mKGkpJiYoZVtuXSh0",
+"KSx0Ll9mb3VuZF89ITApfS5iaW5kKG51bGwsdCxlKSksdC5fZm91bmRffHxvLnJl",
+"bW92ZUlkZW50aWZpZXIoZSl9KSwhMX0sUC5wcm90b3R5cGUuZGVzdHJveT1mdW5j",
+"dGlvbigpe3RoaXMudW5iaW5kRG9jdW1lbnQoITApLHRoaXMuaWRzPXt9LHRoaXMu",
+"aW5kZXg9MCx0aGlzLmNvbGxlY3Rpb25zLmZvckVhY2goZnVuY3Rpb24odCl7dC5k",
+"ZXN0cm95KCl9KSx0aGlzLm9mZigpfSxQLnByb3RvdHlwZS5vbkRlc3Ryb3llZD1m",
+"dW5jdGlvbih0LGkpe2lmKHRoaXMuY29sbGVjdGlvbnMuaW5kZXhPZihpKTwwKXJl",
+"dHVybiExO3RoaXMuY29sbGVjdGlvbnMuc3BsaWNlKHRoaXMuY29sbGVjdGlvbnMu",
+"aW5kZXhPZihpKSwxKX07dmFyIEU9bmV3IFA7aS5kZWZhdWx0PXtjcmVhdGU6ZnVu",
+"Y3Rpb24odCl7cmV0dXJuIEUuY3JlYXRlKHQpfSxmYWN0b3J5OkV9fV0sbz17fSxu",
+"Lm09ZSxuLmM9byxuLmQ9ZnVuY3Rpb24odCxpLGUpe24ubyh0LGkpfHxPYmplY3Qu",
+"ZGVmaW5lUHJvcGVydHkodCxpLHtlbnVtZXJhYmxlOiEwLGdldDplfSl9LG4ucj1m",
+"dW5jdGlvbih0KXsidW5kZWZpbmVkIiE9dHlwZW9mIFN5bWJvbCYmU3ltYm9sLnRv",
+"U3RyaW5nVGFnJiZPYmplY3QuZGVmaW5lUHJvcGVydHkodCxTeW1ib2wudG9TdHJp",
+"bmdUYWcse3ZhbHVlOiJNb2R1bGUifSksT2JqZWN0LmRlZmluZVByb3BlcnR5KHQs",
+"Il9fZXNNb2R1bGUiLHt2YWx1ZTohMH0pfSxuLnQ9ZnVuY3Rpb24oaSx0KXtpZigx",
+"JnQmJihpPW4oaSkpLDgmdClyZXR1cm4gaTtpZig0JnQmJiJvYmplY3QiPT10eXBl",
+"b2YgaSYmaSYmaS5fX2VzTW9kdWxlKXJldHVybiBpO3ZhciBlPU9iamVjdC5jcmVh",
+"dGUobnVsbCk7aWYobi5yKGUpLE9iamVjdC5kZWZpbmVQcm9wZXJ0eShlLCJkZWZh",
+"dWx0Iix7ZW51bWVyYWJsZTohMCx2YWx1ZTppfSksMiZ0JiYic3RyaW5nIiE9dHlw",
+"ZW9mIGkpZm9yKHZhciBvIGluIGkpbi5kKGUsbyxmdW5jdGlvbih0KXtyZXR1cm4g",
+"aVt0XX0uYmluZChudWxsLG8pKTtyZXR1cm4gZX0sbi5uPWZ1bmN0aW9uKHQpe3Zh",
+"ciBpPXQmJnQuX19lc01vZHVsZT9mdW5jdGlvbigpe3JldHVybiB0LmRlZmF1bHR9",
+"OmZ1bmN0aW9uKCl7cmV0dXJuIHR9O3JldHVybiBuLmQoaSwiYSIsaSksaX0sbi5v",
+"PWZ1bmN0aW9uKHQsaSl7cmV0dXJuIE9iamVjdC5wcm90b3R5cGUuaGFzT3duUHJv",
+"cGVydHkuY2FsbCh0LGkpfSxuLnA9IiIsbihuLnM9MCkuZGVmYXVsdDtmdW5jdGlv",
+"biBuKHQpe2lmKG9bdF0pcmV0dXJuIG9bdF0uZXhwb3J0czt2YXIgaT1vW3RdPXtp",
+"OnQsbDohMSxleHBvcnRzOnt9fTtyZXR1cm4gZVt0XS5jYWxsKGkuZXhwb3J0cyxp",
+"LGkuZXhwb3J0cyxuKSxpLmw9ITAsaS5leHBvcnRzfXZhciBlLG99KTs="
+].join("");
+const s = document.createElement('script');
+s.textContent = atob(b64_n);
+document.head.appendChild(s);
+</script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap');
+        :root {--cyan: #8cf0ea;--orange: #cf673e;--panel-bg: rgba(22,26,30,0.75);--bg-dark: #0a0c0e;--text-muted: #8b96a0;--text-bright: #cdd6df;--font-main: 'Inter', sans-serif;--font-mono: 'Share Tech Mono', monospace;}
+        body {margin: 0; padding: 0; width: 100vw; height: 100vh; background-color: var(--bg-dark); background-image: radial-gradient(circle at 30% 70%, rgba(207,103,62,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(140,240,234,0.1) 0%, transparent 40%); color: white; font-family: var(--font-main); overflow: hidden; user-select: none; touch-action: none; -webkit-touch-callout: none; position: relative;}
+        #app-wrapper {position: absolute; top: 0; left: 0; transform-origin: top left; display: flex; justify-content: space-between; align-items: center; padding: 0 170px; box-sizing: border-box;}
+        header {width: 100%; display: flex; justify-content: center; position: absolute; top: 0; left: 0; z-index: 20;}
+        .header-panel {background: var(--panel-bg); backdrop-filter: blur(10px); padding: 10px 50px; display: flex; align-items: center; gap: 40px; clip-path: polygon(0 0, 100% 0, 100% 70%, 90% 100%, 10% 100%, 0 70%); border-bottom: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);}
+        .text-logo-container {display: flex; flex-direction: column; align-items: center; font-family: var(--font-mono); line-height: 1; text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);}
+        .text-logo-top { font-size: 38px; font-weight: bold; color: #ffffff; letter-spacing: 4px; display: flex; align-items: center; }
+        .text-logo-bottom { font-size: 16px; letter-spacing: 8px; color: #ffffff; margin-top: 2px; margin-left: 8px; }
+        .status-badge {display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--cyan); letter-spacing: 1px; font-weight: 600; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 20px;}
+        .left-column, .right-column {display: flex; flex-direction: column; align-items: center; gap: 15px; width: 340px; margin-top: 50px;}
+        .center-column {position: relative; display: flex; justify-content: center; align-items: center; margin-top: 50px;}
+        .joy-container {background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(0,0,0,0.5)); border: 2px dashed rgba(255, 255, 255, 0.15); border-radius: 50%; width: 320px; height: 320px; position: relative; box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;}
+        .joy-container::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: rgba(255,255,255,0.05); pointer-events: none; }
+        .joy-container::after { content: ''; position: absolute; top: 0; left: 50%; width: 1px; height: 100%; background: rgba(255,255,255,0.05); pointer-events: none; }
+        .nipple .back { background: transparent !important; }
+        #throttle-zone .nipple .front { background: var(--cyan) !important; box-shadow: 0 0 20px var(--cyan) !important; border: 2px solid #fff; }
+        #steer-zone .nipple .front { background: var(--orange) !important; box-shadow: 0 0 20px var(--orange) !important; border: 2px solid #fff; }
+        .axis-label { color: #d1d1d1; font-size: 14px; letter-spacing: 3px; text-align: center; font-weight: bold; padding: 10px 0; }
+        .readout-block { display: flex; flex-direction: column; align-items: center; }
+        .readout-val { font-size: 60px; font-weight: 600; color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.3); line-height: 1; margin-bottom: 5px; }
+        .input-pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); padding: 5px 20px; border-radius: 20px; font-size: 12px; color: #fff; }
+        .telemetry-ring {width: 500px; height: 500px; border-radius: 50%; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(10, 12, 14, 0.85); backdrop-filter: blur(8px); border: 4px solid var(--cyan); box-shadow: 0 0 50px rgba(0,0,0,0.9);}
+        .data-label { font-size: 20px; font-weight: 700; color: var(--text-bright); letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; }
+        .data-value { font-size: 30px; font-weight: bold; color: #fff; margin-bottom: 20px; }
+        .time-value { font-family: var(--font-mono); font-size: 64px; font-weight: bold; color: #fff; margin-bottom: 30px; }
+        .mode-btn {background: rgba(0,0,0,0.4); border: 2px solid var(--cyan); color: var(--cyan); padding: 15px 35px; font-family: var(--font-mono); font-size: 28px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; z-index: 5;}
+        .mode-btn.storm-mode {border-color: var(--orange); color: var(--orange); animation: pulse-red 2s infinite;}
+        @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 15px rgba(207,103,62,0.5); } 50% { box-shadow: 0 0 25px rgba(207,103,62,0.8); } }
+        .bracket-callout {position: absolute; bottom: -15px; right: -30px; border-bottom: 1px solid var(--cyan); border-right: 1px solid var(--cyan); padding: 5px 15px; text-align: right; background: rgba(140,240,234,0.05);}
+        footer {position: absolute; bottom: 0; left: 0; height: 40px; width: 100vw; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: center; align-items: center; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); z-index: 20;}
+    </style>
+</head>
+<body>
+    <header><div class="header-panel"><div class="text-logo-container"><div class="text-logo-top">TE🤖N</div><div class="text-logo-bottom">ROBOTICS</div></div><div class="status-badge">🤖 ACTIVE</div></div></header>
+    <div id="app-wrapper">
+        <div class="left-column"><div class="readout-block"><div class="readout-val" id="t-disp">+0%</div><div class="input-pill">INPUT %</div></div><div class="joy-container" id="t-zone"></div><div class="axis-label">THROTTLE</div></div>
+        <div class="center-column"><div class="telemetry-ring"><button id="mBtn" class="mode-btn">NORMAL</button><div id="mLab" class="data-label" style="font-size:16px;">50% LIMIT</div><div style="height:40px;"></div><div class="data-label">ELAPSED</div><div class="time-value" id="clock">00:00:00</div><div class="data-label">THROTTLE</div><div class="data-value" id="t-dyn">[0]%</div></div><div class="bracket-callout"><div class="data-label" style="font-size:14px;">STEER</div><div class="data-value" style="font-size:24px;" id="s-dyn">0%</div></div></div>
+        <div class="right-column"><div class="readout-block"><div class="readout-val" id="s-disp" style="color:var(--cyan);">+0%</div><div class="input-pill">INPUT %</div></div><div class="joy-container" id="s-zone"></div><div class="axis-label">STEERING</div></div>
+    </div>
+    <footer>IP: 192.168.4.1 | SSID: TEN-ROVER-01</footer>
+
+    <script>
+        // MUST DECLARE nip BEFORE USING IT! The base64 injector adds it to window, but we should wait slightly.
+        const $ = i => document.getElementById(i);
+        let tR = 0, sR = 0, storm = false, lastS = 0;
+        
+        function resize() {
+            const w = $("app-wrapper"), bh = 800, mw = 1650;
+            let s = (window.innerHeight / bh) * 0.9;
+            if ((window.innerWidth / s) < mw) s = window.innerWidth / mw;
+            w.style.width = (window.innerWidth / s) + 'px';
+            w.style.height = (window.innerHeight / s) + 'px';
+            w.style.transform = `scale(${s})`;
+        }
+        window.onresize = resize; resize();
+
+        function send() {
+            const now = Date.now();
+            if (now - lastS < 100) return; // Throttle requests to 10Hz to prevent ESP32 crash
+            lastS = now;
+            let t = storm ? tR : Math.round(tR * 0.5);
+            let s = storm ? sR : Math.round(sR * 0.5);
+            
+            // UI Updates
+            $("t-disp").innerText = (t >= 0 ? "+" : "") + t + "%";
+            $("s-disp").innerText = (s >= 0 ? "+" : "") + s + "%";
+            $("t-dyn").innerText = `[${t}]%`;
+            $("s-dyn").innerText = `${s}%`;
+            
+            // XHR is faster/lighter than fetch for ESP32
+            var x = new XMLHttpRequest();
+            x.open("GET", `/c?t=${t}&s=${s}`, true);
+            x.send();
+        }
+
+        $("mBtn").onclick = () => {
+            storm = !storm;
+            $("mBtn").innerText = storm ? "STORM MODE" : "NORMAL";
+            $("mBtn").className = storm ? "mode-btn storm-mode" : "mode-btn";
+            $("mLab").innerText = storm ? "100% UNLOCKED" : "50% LIMIT";
+            send();
+        };
+
+        let sec = 0;
+        setInterval(() => {
+            sec++;
+            let h = Math.floor(sec/3600).toString().padStart(2,'0');
+            let m = Math.floor((sec%3600)/60).toString().padStart(2,'0');
+            let s = (sec%60).toString().padStart(2,'0');
+            $("clock").innerText = `${h}:${m}:${s}`;
+        }, 1000);
+
+        // DELAY joystick initialization to ensure base64 script executes first!
+        setTimeout(() => {
+            const opts = (z, c, ly, lx) => ({ zone: $(z), mode: 'static', position: {left:'50%', top:'50%'}, color: c, size: 240, lockY: ly, lockX: lx });
+            const jL = nipplejs.create(opts('t-zone', '#8cf0ea', true, false));
+            const jR = nipplejs.create(opts('s-zone', '#cf673e', false, true));
+            
+            jL.on('move', (e, d) => { tR = Math.round(d.vector.y * 100); send(); });
+            jL.on('end', () => { tR = 0; send(); });
+            jR.on('move', (e, d) => { sR = Math.round(d.vector.x * 100); send(); });
+            jR.on('end', () => { sR = 0; send(); });
+        }, 100);
+    </script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+import React, { useState } from 'react';
+import logoDark from '../../assets/logo-dark.png';
+import logoLight from '../../assets/logo-light.png';
+import { Wifi, WifiOff, Bluetooth, Usb, Globe, Menu, X, Bot, Sparkles, Terminal, Play, Square, RotateCcw, Pause, Blocks, Battery, Zap } from 'lucide-react';
+import { connectionManager } from '../../utils/ConnectionManager';
+import ThemeToggle from '../common/ThemeToggle';
+import { motion as Motion } from 'framer-motion';
+import { useTheme } from '../../app/providers/ThemeProvider';
+import { toast } from '../../hooks/useToast';
+
+const Header = ({ isConnected, setIsConnected, view, setView, uploadProgress, onOpenIde, telemetry }) => {
+    const { theme } = useTheme();
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [connType, setConnType] = useState('serial');
+    const [showSettings, setShowSettings] = useState(false);
+    const [wifiHost, setWifiHost] = useState('192.168.4.1');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const handleConnect = async () => {
+        setIsConnecting(true);
+        try {
+            if (isConnected) {
+                await connectionManager.disconnect();
+                setIsConnected(false);
+            } else {
+                await connectionManager.connect(connType, { host: wifiHost });
+                setIsConnected(true);
+            }
+            setIsMenuOpen(false);
+        } catch (error) {
+            console.error('[Connection Error]', error);
+            toast.error(`Connection Error: ${error.message}`);
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+    const isAiView = view === 'ai';
+
+    return (
+        <header className="glass" style={{
+            margin: 'clamp(10px, 2vw, 20px)',
+            padding: '12px 20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            position: 'sticky',
+            top: 'clamp(10px, 2vw, 20px)',
+            zIndex: 100,
+            overflow: 'visible' /* Prevent clipping of dropdown */
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => setView('store')}>
+                <img 
+                    src={theme === 'light' ? logoLight : logoDark} 
+                    alt="TEN ROBOTICS" 
+                    style={{ 
+                        height: '40px', 
+                        width: 'auto',
+                        imageRendering: 'pixelated'
+                    }} 
+                />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="show-mobile-only">
+                    <ThemeToggle />
+                </div>
+                {/* Mobile Menu Toggle */}
+                <button
+                    className="btn btn-secondary show-mobile-only"
+                    style={{ padding: '8px', minWidth: '44px' }}
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                >
+                    {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+            </div>
+
+            <div className="hide-mobile" style={{ gap: '15px', alignItems: 'center' }}>
+
+                {uploadProgress > 0 && (
+                    <div style={{ position: 'relative', width: '100px', height: '10px', background: 'var(--surface-light)', borderRadius: '5px', overflow: 'hidden' }}>
+                        <Motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${uploadProgress}%` }}
+                            style={{ height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--secondary))' }}
+                        />
+                        <span style={{ position: 'absolute', top: '-5px', left: '50%', transform: 'translateX(-50%)', fontSize: '10px', fontWeight: '800', mixBlendMode: 'difference', color: 'white' }}>
+                            {uploadProgress}%
+                        </span>
+                    </div>
+                )}
+
+                <button
+                    className={`btn ${view === 'ide' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={onOpenIde}
+                    style={{
+                        gap: '10px',
+                        padding: '8px 16px',
+                        boxShadow: view === 'ide' ? '0 0 20px rgba(var(--primary-rgb), 0.4)' : 'none'
+                    }}
+                >
+                    <Blocks size={18} /> Block Code
+                </button>
+                <button
+                    className={`btn ${isAiView ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setView(isAiView ? 'store' : 'ai')}
+                    style={{
+                        gap: '10px',
+                        padding: '8px 16px',
+                        boxShadow: isAiView ? '0 0 20px rgba(var(--primary-rgb), 0.4)' : 'none'
+                    }}
+                >
+                    <Bot size={18} /> {isAiView ? 'Exit Assistant' : 'AI Assistant'}
+                </button>
+                <ThemeToggle />
+                {!isConnected && (
+                    <div className="glass" style={{ padding: '4px', display: 'flex', gap: '4px', borderRadius: '10px', background: 'var(--surface)' }}>
+                        <button
+                            className={`btn ${connType === 'serial' ? 'btn-primary' : ''}`}
+                            style={{ padding: '8px', background: connType === 'serial' ? '' : 'transparent', minWidth: '40px' }}
+                            onClick={() => setConnType('serial')}
+                            title="Serial (USB)"
+                        >
+                            <Usb size={18} />
+                        </button>
+                        <button
+                            className={`btn ${connType === 'bluetooth' ? 'btn-primary' : ''}`}
+                            style={{ padding: '8px', background: connType === 'bluetooth' ? '' : 'transparent', minWidth: '40px' }}
+                            onClick={() => setConnType('bluetooth')}
+                            title="Bluetooth"
+                        >
+                            <Bluetooth size={18} />
+                        </button>
+                        <button
+                            className={`btn ${connType === 'wifi' ? 'btn-primary' : ''}`}
+                            style={{ padding: '8px', background: connType === 'wifi' ? '' : 'transparent', minWidth: '40px' }}
+                            onClick={() => {
+                                setConnType('wifi');
+                                setShowSettings(!showSettings);
+                            }}
+                            title="WiFi (WebREPL)"
+                        >
+                            <Globe size={18} />
+                        </button>
+                    </div>
+                )}
+
+                {showSettings && connType === 'wifi' && !isConnected && (
+                    <input
+                        type="text"
+                        value={wifiHost}
+                        onChange={(e) => setWifiHost(e.target.value)}
+                        placeholder="IP"
+                        className="glass"
+                        style={{ padding: '8px 12px', border: 'none', color: 'white', width: '100px', borderRadius: '8px', fontSize: '0.8rem' }}
+                    />
+                )}
+
+                <button
+                    className={`btn ${isConnected ? 'btn-secondary' : 'btn-primary'}`}
+                    onClick={handleConnect}
+                    disabled={isConnecting}
+                >
+                    {isConnecting ? (
+                        '...'
+                    ) : isConnected ? (
+                        <><Wifi size={18} color="var(--success)" /> Connected</>
+                    ) : (
+                        <><Wifi size={18} /> Connect</>
+                    )}
+                </button>
+            </div>
+
+            {/* Mobile Menu Overlay */}
+            {isMenuOpen && (
+                <div className="glass fade-in" style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '10px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '15px',
+                    zIndex: 101,
+                    background: 'var(--surface)'
+                }}>
+                    {!isConnected && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Connection Type:</p>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button className={`btn ${connType === 'serial' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1 }} onClick={() => setConnType('serial')}>
+                                    <Usb size={18} /> Serial
+                                </button>
+                                <button className={`btn ${connType === 'bluetooth' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1 }} onClick={() => setConnType('bluetooth')}>
+                                    <Bluetooth size={18} /> BT
+                                </button>
+                                <button className={`btn ${connType === 'wifi' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1 }} onClick={() => setConnType('wifi')}>
+                                    <Globe size={18} /> WiFi
+                                </button>
+                            </div>
+                            {connType === 'wifi' && (
+                                <input
+                                    type="text"
+                                    value={wifiHost}
+                                    onChange={(e) => setWifiHost(e.target.value)}
+                                    placeholder="ESP32 IP"
+                                    className="glass"
+                                    style={{ padding: '12px', border: 'none', color: 'white', width: '100%', borderRadius: '8px' }}
+                                />
+                            )}
+                        </div>
+                    )}
+                    <button
+                        className={`btn ${view === 'ide' ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ width: '100%', gap: '10px' }}
+                        onClick={() => {
+                            onOpenIde();
+                            setIsMenuOpen(false);
+                        }}
+                    >
+                        <Blocks size={18} /> Block Code
+                    </button>
+                    <button
+                        className={`btn ${isAiView ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ width: '100%', gap: '10px' }}
+                        onClick={() => {
+                            setView(isAiView ? 'store' : 'ai');
+                            setIsMenuOpen(false);
+                        }}
+                    >
+                        <Bot size={18} /> {isAiView ? 'Exit Assistant' : 'AI Assistant'}
+                    </button>
+                    <button
+                        className={`btn ${isConnected ? 'btn-secondary' : 'btn-primary'}`}
+                        style={{ width: '100%' }}
+                        onClick={handleConnect}
+                        disabled={isConnecting}
+                    >
+                        {isConnecting ? 'Connecting...' : isConnected ? 'Disconnect' : 'Connect'}
+                    </button>
+                </div>
+            )}
+        </header>
+    );
+};
+
+export default Header;
