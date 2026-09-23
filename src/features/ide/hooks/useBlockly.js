@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import * as Blockly from 'blockly';
 import { pythonGenerator } from 'blockly/python';
 import { defineCustomBlocks } from '../services/customBlocks';
+import { registerCustomCategory } from '../services/categoryIcons';
+import '../styles/BlocklyTheme.css';
 
 export const useBlockly = (project) => {
     const blocklyDiv = useRef(null);
@@ -11,6 +13,7 @@ export const useBlockly = (project) => {
     useEffect(() => {
         if (!blocklyDiv.current) return;
 
+        registerCustomCategory();
         defineCustomBlocks();
 
         workspace.current = Blockly.inject(blocklyDiv.current, {
@@ -222,27 +225,53 @@ export const useBlockly = (project) => {
                     'variable_category': { 'colour': '#FF6680' },
                 },
                 'componentStyles': {
-                    'workspaceBackgroundColour': '#ffffff',
-                    'toolboxBackgroundColour': '#f0f0f0',
-                    'toolboxForegroundColour': '#333',
-                    'flyoutBackgroundColour': '#ffffff',
-                    'flyoutForegroundColour': '#666',
-                    'flyoutOpacity': 0.9,
-                    'scrollbarColour': '#ccc',
-                    'insertionMarkerColour': '#000',
-                    'insertionMarkerOpacity': 0.3,
+                    'workspaceBackgroundColour': '#FAF9F5',
+                    'toolboxBackgroundColour': '#FAF7F2',
+                    'toolboxForegroundColour': '#18181B',
+                    'flyoutBackgroundColour': '#FFFFFF',
+                    'flyoutForegroundColour': '#18181B',
+                    'flyoutOpacity': 0.98,
+                    'scrollbarColour': '#D1D5DB',
+                    'insertionMarkerColour': '#0284C7',
+                    'insertionMarkerOpacity': 0.35,
                 },
                 'fontStyle': {
-                    'family': 'Outfit, sans-serif',
-                    'weight': 'bold',
+                    'family': 'Outfit, Inter, sans-serif',
+                    'weight': '600',
                     'size': 12
                 }
             }),
-            grid: { spacing: 25, length: 3, colour: '#eee', snap: true },
+            grid: { spacing: 25, length: 3, colour: '#E5E7EB', snap: true },
             trashcan: true,
             zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
             move: { scrollbars: true, drag: true, wheel: true }
         });
+
+        // Ensure toolbox dimensions and flyout positions are aligned with the 205px custom width
+        let resizeObserver = null;
+        if (typeof ResizeObserver !== 'undefined' && blocklyDiv.current) {
+            resizeObserver = new ResizeObserver(() => {
+                if (workspace.current) {
+                    Blockly.svgResize(workspace.current);
+                }
+            });
+            resizeObserver.observe(blocklyDiv.current);
+        }
+
+        const handleResize = () => {
+            if (workspace.current) {
+                Blockly.svgResize(workspace.current);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+
+        setTimeout(() => {
+            if (workspace.current) {
+                Blockly.svgResize(workspace.current);
+                const tb = workspace.current.getToolbox();
+                if (tb) tb.position();
+            }
+        }, 50);
 
         // Reposition Trashcan - Move it above the zoom buttons
         setTimeout(() => {
@@ -356,6 +385,8 @@ export const useBlockly = (project) => {
         workspace.current.addChangeListener(generateCode);
 
         return () => {
+            window.removeEventListener('resize', handleResize);
+            if (resizeObserver) resizeObserver.disconnect();
             if (workspace.current) {
                 workspace.current.dispose();
             }

@@ -127,15 +127,50 @@ function App() {
 
   const tv = pageVariants[view] || pageVariants.store;
 
+  // Lock viewport overflow and height when in IDE view to guarantee exact screen ratio fit
+  useEffect(() => {
+    if (view === 'ide') {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+      document.documentElement.style.height = '100vh';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      document.body.style.height = '';
+      document.documentElement.style.height = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      document.body.style.height = '';
+      document.documentElement.style.height = '';
+    };
+  }, [view]);
+
   return (
     <ThemeProvider>
       <Suspense fallback={<LoadingSpinner />}>
         <ErrorBoundary>
           <div
             className="App"
-            style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--background)', color: 'var(--text)', perspective: 'var(--perspective)', transformStyle: 'preserve-3d' }}
+            style={{
+              height: view === 'ide' ? '100vh' : 'auto',
+              minHeight: view === 'ide' ? '100vh' : '100vh',
+              maxHeight: view === 'ide' ? '100vh' : 'none',
+              width: '100vw',
+              maxWidth: '100vw',
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--background)',
+              color: 'var(--text)',
+              perspective: 'var(--perspective)',
+              transformStyle: 'preserve-3d',
+              overflow: view === 'ide' ? 'hidden' : 'visible'
+            }}
           >
-            <Header
+            {view !== 'ide' && (
+              <Header
                 isConnected={isConnected}
                 setIsConnected={setConnected}
                 onHome={handleBackToStore}
@@ -146,8 +181,21 @@ function App() {
                 onOpenIde={handleOpenIde}
                 telemetry={telemetry}
               />
+            )}
 
-            <main className="preserve-3d" style={{ flex: 1, overflow: 'hidden', padding: '0 clamp(10px, 2vw, 20px)' }}>
+            <main
+              className="preserve-3d"
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                height: view === 'ide' ? '100%' : 'auto',
+                maxHeight: view === 'ide' ? '100%' : 'none',
+                minHeight: 0,
+                overflow: 'hidden',
+                padding: view === 'ide' ? '0' : '0 clamp(10px, 2vw, 20px)'
+              }}
+            >
               <AnimatePresence mode="wait">
                 <Motion.div
                   key={view}
@@ -156,7 +204,16 @@ function App() {
                   exit={tv.exit}
                   transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                   className={view === 'ai' ? 'ai-view-wrapper' : ''}
-                  style={{ transformStyle: 'preserve-3d' }}
+                  style={{
+                    transformStyle: 'preserve-3d',
+                    height: view === 'ide' ? '100%' : 'auto',
+                    maxHeight: view === 'ide' ? '100%' : 'none',
+                    minHeight: 0,
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden'
+                  }}
                 >
                   <Suspense fallback={<LoadingSpinner />}>
                     {view === 'store' && (
@@ -200,11 +257,13 @@ function App() {
               </AnimatePresence>
             </main>
 
-            <footer style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                TEN ROBOTICS v1.0 • Built for ESP32 &amp; MicroPython
-              </p>
-            </footer>
+            {view !== 'ide' && (
+              <footer style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                  TEN ROBOTICS v1.0 • Built for ESP32 &amp; MicroPython
+                </p>
+              </footer>
+            )}
           </div>
         </ErrorBoundary>
       </Suspense>

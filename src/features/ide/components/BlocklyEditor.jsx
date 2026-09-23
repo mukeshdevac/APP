@@ -1,6 +1,7 @@
 import React, { memo, forwardRef, useImperativeHandle } from 'react';
 import * as Blockly from 'blockly';
 import { useBlockly } from '../hooks/useBlockly';
+import '../styles/BlocklyTheme.css';
 
 /**
  * BlocklyEditor isolates the Blockly injection and workspace management.
@@ -24,6 +25,17 @@ const BlocklyEditor = memo(forwardRef(({ project, onCodeChange }, ref) => {
                     console.error('[BlocklyEditor] Error loading XML:', e);
                 }
             }
+        },
+        getXml: () => {
+            if (workspace && workspace.current) {
+                try {
+                    const dom = Blockly.Xml.workspaceToDom(workspace.current);
+                    return Blockly.Xml.domToPrettyText(dom);
+                } catch (e) {
+                    console.error('[BlocklyEditor] Error serializing workspace XML:', e);
+                }
+            }
+            return '';
         }
     }));
 
