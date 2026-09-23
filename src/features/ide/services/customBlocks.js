@@ -184,6 +184,51 @@ export const defineCustomBlocks = () => {
         return `${varName}.drive(${finalSpeed})\n`;
     };
 
+    // --- DUAL MOTOR / TANK DRIVE ---
+    Blockly.Blocks['esp32_dual_motor'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("⚙️ Tank Drive Left (M1)");
+            this.appendValueInput("LEFT_SPEED")
+                .setCheck("Number");
+            this.appendDummyInput()
+                .appendField("%  Right (M2)");
+            this.appendValueInput("RIGHT_SPEED")
+                .setCheck("Number");
+            this.appendDummyInput()
+                .appendField("%");
+            this.setInputsInline(true);
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#4C97FF');
+            this.setTooltip("Drive Left (M1) and Right (M2) motors together. Speed: -100 to 100.");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_dual_motor'] = function (block) {
+        const left = pythonGenerator.valueToCode(block, 'LEFT_SPEED', pythonGenerator.ORDER_ATOMIC) || '80';
+        const right = pythonGenerator.valueToCode(block, 'RIGHT_SPEED', pythonGenerator.ORDER_ATOMIC) || '80';
+        pythonGenerator.definitions_['drv_motor_1'] = 'motor_1 = ten.Motor(1)';
+        pythonGenerator.definitions_['drv_motor_2'] = 'motor_2 = ten.Motor(2)';
+        return `motor_1.drive(int(${left}))\nmotor_2.drive(int(${right}))\n`;
+    };
+
+    // --- STOP ALL MOTORS ---
+    Blockly.Blocks['esp32_stop_all_motors'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("⚙️ Stop All Motors");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#4C97FF');
+            this.setTooltip("Stop and brake all DC motors (M1, M2, M3)");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_stop_all_motors'] = function () {
+        return `ten.stop_motors()\n`;
+    };
+
     // --- OUTPUT BLOCK (Single-Direction: OUT1, OUT2 via DRV8833 #2 B-channel) ---
     Blockly.Blocks['esp32_output'] = {
         init: function () {
@@ -401,26 +446,30 @@ export const defineCustomBlocks = () => {
     };
 
 
-    // --- DIGITAL PIN BLOCK ---
+    // --- DIGITAL PIN BLOCKS ---
     Blockly.Blocks['esp32_digital_write'] = {
         init: function () {
             this.appendDummyInput()
                 .appendField("Set Digital Pin")
                 .appendField(new Blockly.FieldDropdown([
-                    ["OUT1 (D23)", "23"], 
+                    ["OUT1 (D4)", "4"], 
                     ["OUT2 (D5)", "5"], 
+                    ["S1 (D18)", "18"],
+                    ["S2 (D19)", "19"],
                     ["M1 IN1 (D13)", "13"], 
                     ["M1 IN2 (D14)", "14"], 
                     ["M2 IN1 (D27)", "27"], 
                     ["M2 IN2 (D26)", "26"], 
                     ["M3 IN1 (D25)", "25"], 
-                    ["M3 IN2 (D33)", "33"]
+                    ["M3 IN2 (D23)", "23"],
+                    ["BUZZER (D33)", "33"]
                 ]), "PIN")
                 .appendField("to")
-                .appendField(new Blockly.FieldDropdown([["HIGH", "1"], ["LOW", "0"]]), "STATE");
+                .appendField(new Blockly.FieldDropdown([["HIGH (1)", "1"], ["LOW (0)", "0"]]), "STATE");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
-            this.setColour('#4C97FF');
+            this.setColour('#0284C7');
+            this.setTooltip("Set digital output pin HIGH (3.3V) or LOW (0V)");
         }
     };
 
@@ -430,6 +479,187 @@ export const defineCustomBlocks = () => {
         const varName = `pin_${pin}`;
         pythonGenerator.definitions_[`drv_pin_${pin}`] = `${varName} = machine.Pin(${pin}, machine.Pin.OUT)`;
         return `${varName}.value(${state})\n`;
+    };
+
+    Blockly.Blocks['esp32_digital_read'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("Read Digital Pin")
+                .appendField(new Blockly.FieldDropdown([
+                    ["SN1 (D34)", "34"],
+                    ["SN2 (D35)", "35"],
+                    ["SN3 (D32)", "32"],
+                    ["OUT1 (D4)", "4"],
+                    ["OUT2 (D5)", "5"],
+                    ["BTN1 (D16)", "16"],
+                    ["BTN2 (D17)", "17"],
+                    ["S1 (D18)", "18"],
+                    ["S2 (D19)", "19"],
+                    ["BUZZER (D33)", "33"]
+                ]), "PIN");
+            this.setOutput(true, "Number");
+            this.setColour('#0284C7');
+            this.setTooltip("Read logic level of digital pin (returns 1 or 0)");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_digital_read'] = function (block) {
+        const pin = block.getFieldValue('PIN');
+        const varName = `pin_${pin}_in`;
+        pythonGenerator.definitions_[`drv_pin_${pin}_in`] = `${varName} = machine.Pin(${pin}, machine.Pin.IN)`;
+        return [`${varName}.value()`, pythonGenerator.ORDER_ATOMIC];
+    };
+
+    Blockly.Blocks['esp32_digital_toggle'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("Toggle Digital Pin")
+                .appendField(new Blockly.FieldDropdown([
+                    ["OUT1 (D4)", "4"],
+                    ["OUT2 (D5)", "5"],
+                    ["S1 (D18)", "18"],
+                    ["S2 (D19)", "19"],
+                    ["BUZZER (D33)", "33"]
+                ]), "PIN");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#0284C7');
+            this.setTooltip("Inverts current state of digital output pin");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_digital_toggle'] = function (block) {
+        const pin = block.getFieldValue('PIN');
+        const varName = `pin_${pin}`;
+        pythonGenerator.definitions_[`drv_pin_${pin}`] = `${varName} = machine.Pin(${pin}, machine.Pin.OUT)`;
+        return `${varName}.value(not ${varName}.value())\n`;
+    };
+
+    Blockly.Blocks['esp32_led_builtin'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("Status LED (D2)")
+                .appendField(new Blockly.FieldDropdown([["ON", "1"], ["OFF", "0"]]), "STATE");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#0284C7');
+            this.setTooltip("Turn onboard system status LED on or off");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_led_builtin'] = function (block) {
+        const state = block.getFieldValue('STATE');
+        pythonGenerator.definitions_['drv_sys_led'] = 'sys_led = machine.Pin(2, machine.Pin.OUT)';
+        return `sys_led.value(${state})\n`;
+    };
+
+    // --- ANALOG & PWM BLOCKS ---
+    Blockly.Blocks['esp32_analog_read'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("Analog Read Pin")
+                .appendField(new Blockly.FieldDropdown([
+                    ["SN1 (D34)", "34"],
+                    ["SN2 (D35)", "35"],
+                    ["SN3 (D32)", "32"],
+                    ["SN4 / VBAT (D36)", "36"]
+                ]), "PIN")
+                .appendField("Raw (0-4095)");
+            this.setOutput(true, "Number");
+            this.setColour('#0D9488');
+            this.setTooltip("Read 12-bit ADC raw reading (0 to 4095)");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_analog_read'] = function (block) {
+        const pin = block.getFieldValue('PIN');
+        const varName = `adc_${pin}`;
+        pythonGenerator.definitions_[`drv_adc_${pin}`] = `${varName} = machine.ADC(machine.Pin(${pin}))`;
+        return [`${varName}.read()`, pythonGenerator.ORDER_ATOMIC];
+    };
+
+    Blockly.Blocks['esp32_analog_read_voltage'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("Analog Read Voltage")
+                .appendField(new Blockly.FieldDropdown([
+                    ["SN1 (D34)", "34"],
+                    ["SN2 (D35)", "35"],
+                    ["SN3 (D32)", "32"],
+                    ["SN4 (D36)", "36"]
+                ]), "PIN")
+                .appendField("(Volts)");
+            this.setOutput(true, "Number");
+            this.setColour('#0D9488');
+            this.setTooltip("Read analog voltage in Volts (0.0 to 3.3V)");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_analog_read_voltage'] = function (block) {
+        const pin = block.getFieldValue('PIN');
+        const varName = `adc_${pin}`;
+        pythonGenerator.definitions_[`drv_adc_${pin}`] = `${varName} = machine.ADC(machine.Pin(${pin}))`;
+        return [`round((${varName}.read() / 4095.0) * 3.3, 2)`, pythonGenerator.ORDER_ATOMIC];
+    };
+
+    Blockly.Blocks['esp32_pwm_write'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("PWM Write Pin")
+                .appendField(new Blockly.FieldDropdown([
+                    ["S1 (D18)", "18"],
+                    ["S2 (D19)", "19"],
+                    ["BUZZER (D33)", "33"],
+                    ["OUT1 (D4)", "4"],
+                    ["OUT2 (D5)", "5"]
+                ]), "PIN")
+                .appendField("Duty");
+            this.appendValueInput("DUTY")
+                .setCheck("Number");
+            this.setInputsInline(true);
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#0D9488');
+            this.setTooltip("Generate PWM signal. Duty cycle: 0 to 1023 (0=0%, 1023=100%).");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_pwm_write'] = function (block) {
+        const pin = block.getFieldValue('PIN');
+        const duty = pythonGenerator.valueToCode(block, 'DUTY', pythonGenerator.ORDER_ATOMIC) || '512';
+        const varName = `pwm_${pin}`;
+        pythonGenerator.definitions_[`drv_pwm_${pin}`] = `${varName} = machine.PWM(machine.Pin(${pin}), freq=1000)`;
+        return `${varName}.duty(max(0, min(1023, int(${duty}))))\n`;
+    };
+
+    Blockly.Blocks['esp32_pwm_freq'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("PWM Set Freq Pin")
+                .appendField(new Blockly.FieldDropdown([
+                    ["S1 (D18)", "18"],
+                    ["S2 (D19)", "19"],
+                    ["BUZZER (D33)", "33"],
+                    ["OUT1 (D4)", "4"],
+                    ["OUT2 (D5)", "5"]
+                ]), "PIN");
+            this.appendValueInput("FREQ")
+                .setCheck("Number")
+                .appendField("Freq (Hz)");
+            this.setInputsInline(true);
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#0D9488');
+            this.setTooltip("Set PWM frequency in Hz (1 to 40000 Hz)");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_pwm_freq'] = function (block) {
+        const pin = block.getFieldValue('PIN');
+        const freq = pythonGenerator.valueToCode(block, 'FREQ', pythonGenerator.ORDER_ATOMIC) || '1000';
+        const varName = `pwm_${pin}`;
+        pythonGenerator.definitions_[`drv_pwm_${pin}`] = `${varName} = machine.PWM(machine.Pin(${pin}), freq=1000)`;
+        return `${varName}.freq(max(1, min(40000, int(${freq}))))\n`;
     };
 
     Blockly.Blocks['esp32_sensor_read'] = {
@@ -498,6 +728,52 @@ def ${funcName}():
             this.setNextStatement(true, null);
             this.setColour('#4CBFE6');
         }
+    };
+
+    // --- SERIAL & COMMUNICATION ---
+    Blockly.Blocks['esp32_serial_print'] = {
+        init: function () {
+            this.appendValueInput("TEXT")
+                .appendField("🖨️ Serial Print");
+            this.appendDummyInput()
+                .appendField(new Blockly.FieldDropdown([["with Newline", "true"], ["same Line", "false"]]), "NEWLINE");
+            this.setInputsInline(true);
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#8B5CF6');
+            this.setTooltip("Prints text or sensor values directly to the Web Serial & Bluetooth Monitor.");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_serial_print'] = function (block) {
+        const text = pythonGenerator.valueToCode(block, 'TEXT', pythonGenerator.ORDER_ATOMIC) || "''";
+        const newline = block.getFieldValue('NEWLINE') === 'true';
+        if (newline) {
+            return `print(${text})\n`;
+        } else {
+            return `print(${text}, end='')\n`;
+        }
+    };
+
+    Blockly.Blocks['esp32_serial_print_var'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("🖨️ Serial Print Label")
+                .appendField(new Blockly.FieldTextInput("Value"), "LABEL");
+            this.appendValueInput("VAL")
+                .appendField("=");
+            this.setInputsInline(true);
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#8B5CF6');
+            this.setTooltip("Prints a label and its value to the Serial Monitor (e.g. 'Reading: 25.4')");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_serial_print_var'] = function (block) {
+        const label = block.getFieldValue('LABEL');
+        const val = pythonGenerator.valueToCode(block, 'VAL', pythonGenerator.ORDER_ATOMIC) || "''";
+        return `print(f"${label}: {${val}}")\n`;
     };
 
     pythonGenerator.forBlock['esp32_broadcast'] = function (block) {
@@ -587,53 +863,585 @@ def ${funcName}():
     };
 
 
+    // --- REAL 32x32 MONOCHROME BITMAP EMOJIS (STANDALONE MICROPYTHON) ---
+    const EMOJI_ENGINE = `
+_EMOJI_BITMAPS = {
+    'heart': b'\\x00\\x00\\x00\\x00\\x00x\\x1e\\x00\\x01\\xfe\\x7f\\x80\\x03\\xff\\xff\\xc0\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x03\\xff\\xff\\xc0\\x03\\xff\\xff\\xc0\\x01\\xff\\xff\\x80\\x01\\xff\\xff\\x80\\x00\\xff\\xff\\x00\\x00\\x7f\\xfe\\x00\\x00?\\xfc\\x00\\x00\\x1f\\xf8\\x00\\x00\\x0f\\xf0\\x00\\x00\\x03\\xc0\\x00\\x00\\x01\\x80\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'smile': b'\\x00\\x00\\x00\\x00\\x00\\x0f\\xe0\\x00\\x00\\x7f\\xfc\\x00\\x01\\xf0\\x1f\\x00\\x03\\xc0\\x07\\x80\\x07\\x00\\x01\\xc0\\x0e\\x00\\x00\\xe0\\x1c\\x00\\x00p\\x18\\x00\\x0008 \\x0880p\\x1c\\x180\\xf8>\\x18\`p\\x1c\\x0c\` \\x08\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c0@\\x00\\x180\`\\x04\\x1880\\x0c8\\x18\\x1c80\\x1c\\x0f\\xf0p\\x0e\\x00\\x00\\xe0\\x07\\x00\\x01\\xc0\\x03\\xc0\\x07\\x80\\x01\\xf0\\x1f\\x00\\x00\\x7f\\xfc\\x00\\x00\\x0f\\xe0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'cool': b'\\x00\\x00\\x00\\x00\\x00\\x0f\\xe0\\x00\\x00\\x7f\\xfc\\x00\\x01\\xf0\\x1f\\x00\\x03\\xc0\\x07\\x80\\x07\\x00\\x01\\xc0\\x0e\\x00\\x00\\xe0\\x1c\\x00\\x00p\\x18\\x00\\x000;\\xfc\\x7f\\xb82|O\\x982\\xff\\xdf\\x98c\\xff\\xff\\x8cc\\xfc\\x7f\\x8cc\\xfc\\x7f\\x8cc\\xfc\\x7f\\x8c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c0\\x00\\x00\\x180\\x00\\x04\\x188\\x00\\x088\\x18\\x1f\\xf80\\x1c\\x00\\x00p\\x0e\\x00\\x00\\xe0\\x07\\x00\\x01\\xc0\\x03\\xc0\\x07\\x80\\x01\\xf0\\x1f\\x00\\x00\\x7f\\xfc\\x00\\x00\\x0f\\xe0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'grin': b'\\x00\\x00\\x00\\x00\\x00\\x0f\\xe0\\x00\\x00\\x7f\\xfc\\x00\\x01\\xf0\\x1f\\x00\\x03\\xc0\\x07\\x80\\x07\\x00\\x01\\xc0\\x0e\\x00\\x00\\xe0\\x1c\\x00\\x00p\\x18\\x00\\x0009\\x00 81\\x881\\x180\\xd8\\x1b\\x18\`p\\x0e\\x0c\` \\x04\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0ca\\xff\\xff\\x0c0\\xff\\xff\\x180\\xff\\xff\\x188\\x00\\x008\\x18\\x7f\\xfe0\\x1c?\\xfcp\\x0e\\x0f\\xf0\\xe0\\x07\\x00\\x01\\xc0\\x03\\xc0\\x07\\x80\\x01\\xf0\\x1f\\x00\\x00\\x7f\\xfc\\x00\\x00\\x0f\\xe0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'robot': b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\x80\\x00\\x00\\x01\\x80\\x00\\x00\\x01\\x80\\x00\\x00\\x01\\x80\\x00\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x06\\x00\\x00\`\\x06\\x00\\x00\`\\x06\\x00\\x00\`\\x06|>\\x06|>\\x1e|>x\\x1e|>x\\x1e|>x\\x1e\\x00\\x00x\\x1e\\x00\\x00x\\x1e\\x00\\x00x\\x1e\\x00\\x00x\\x06\\x7f\\xfe\`\\x06I"\\x06I"\\x06\\x7f\\xfe\`\\x06\\x00\\x00\`\\x06\\x00\\x00\`\\x07\\xff\\xff\\xe0\\x07\\xff\\xff\\xe0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'cat': b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x0f\\xe0\\x07\\xf0\\x07\\xc0\\x03\\xe0\\x03\\x81\\x01\\xc0\\x01\\x1f\\xf0\\x80\\x00\\x7f\\xfc\\x00\\x00\\xff\\xfe\\x00\\x01\\xff\\xff\\x00\\x03\\xff\\xff\\x80\\x03\\xff\\xff\\x80\\x07\\x87\\xc3\\xc0\\x07\\xa7\\xcb\\xc0\\x07\\xa7\\xcb\\xc0\\x07\\x87\\xc3\\xc0?\\xff\\xff\\xec\\x0f\\xfe\\x7f\\xf0\\x07\\xff\\xff\\xc0\\x0f\\xff\\xff\\xf07\\xff\\xff\\xcc\\x03\\xff\\xff\\x80\\x03\\xff\\xff\\x80\\x01\\xff\\xff\\x00\\x00\\xff\\xfe\\x00\\x00\\x7f\\xfc\\x00\\x00\\x1f\\xf0\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'skull': b'\\x00\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x1f\\xf0\\x00\\x00\\x7f\\xfc\\x00\\x00\\xff\\xfe\\x00\\x01\\xff\\xff\\x00\\x03\\xff\\xff\\x80\\x03\\xff\\xff\\x80\\x07\\xff\\xff\\xc0\\x07\\xff\\xff\\xc0\\x07\\x83\\xc1\\xc0\\x07\\x83\\xc1\\xc0\\x0f\\x83\\xc1\\xe0\\x07\\x83\\xc1\\xc0\\x07\\x83\\xc1\\xc0\\x07\\xff\\xff\\xc0\\x07\\xfe\\x7f\\xc0\\x03\\xfe\\x7f\\x80\\x03\\xff\\xff\\x80\\x01\\xff\\xff\\x00\\x00\\xff\\xfe\\x00\\x00\\x7f\\xfc\\x00\\x00?\\xfc\\x00\\x006\\xdc\\x00\\x006\\xdc\\x00\\x006\\xdc\\x00\\x006\\xdc\\x00\\x00?\\xfc\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'sad': b'\\x00\\x00\\x00\\x00\\x00\\x0f\\xe0\\x00\\x00\\x7f\\xfc\\x00\\x01\\xf0\\x1f\\x00\\x03\\xc0\\x07\\x80\\x07\\x00\\x01\\xc0\\x0e\\x00\\x00\\xe0\\x1c\\x00\\x00p\\x18\\x00\\x0008 \\x0880p\\x1c\\x180\\xf8>\\x18\`p\\x1c\\x0c\` \\x08\\x0c\`\\x00\\x00\\x8c\`\\x00\\x01\\xcc\`\\x00\\x01\\xcc\`\\x00\\x00\\x8c\`\\x00\\x00\\x0c0\\x00\\x00\\x180\\x0f\\xf0\\x188\\x1c88\\x180\\x0c0\\x1c\`\\x04p\\x0e\\x00\\x00\\xe0\\x07\\x00\\x01\\xc0\\x03\\xc0\\x07\\x80\\x01\\xf0\\x1f\\x00\\x00\\x7f\\xfc\\x00\\x00\\x0f\\xe0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'surprised': b'\\x00\\x00\\x00\\x00\\x00\\x0f\\xe0\\x00\\x00\\x7f\\xfc\\x00\\x01\\xf0\\x1f\\x00\\x03\\xc0\\x07\\x80\\x07\\x00\\x01\\xc0\\x0e\\x00\\x00\\xe0\\x1c \\x04p\\x18\\xf8\\x1f08\\xf8\\x1f81\\xfc?\\x980\\xf8\\x1f\\x18\`\\xf8\\x1f\\x0c\` \\x04\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c\`\\x01\\x00\\x0c\`\\x07\\xc0\\x0c0\\x0f\\xe0\\x180\\x0e\\xe0\\x188\\x1ep8\\x18\\x0e\\xe00\\x1c\\x0f\\xe0p\\x0e\\x07\\xc0\\xe0\\x07\\x01\\x01\\xc0\\x03\\xc0\\x07\\x80\\x01\\xf0\\x1f\\x00\\x00\\x7f\\xfc\\x00\\x00\\x0f\\xe0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'angry': b'\\x00\\x00\\x00\\x00\\x00\\x0f\\xe0\\x00\\x00\\x7f\\xfc\\x00\\x01\\xf0\\x1f\\x00\\x03\\xc0\\x07\\x80\\x07\\x00\\x01\\xc0\\x0e\\x00\\x00\\xe0\\x1c\\x00\\x00p\\x19\\x00\\x00\\xb09\\x80\\x01\\xb80\\xc0\\x03\\x180\`\\x06\\x18\`0\\x0c\\x0c\`x\\x1c\\x0c\`\\xf8>\\x0c\`p\\x1c\\x0c\` \\x08\\x0c\`\\x00\\x00\\x0c\`\\x00\\x00\\x0c0\\x00\\x00\\x180\\x00\\x00\\x188\\x00\\x008\\x18 \\x040\\x1c?\\xfcp\\x0e?\\xfc\\xe0\\x07\\x00\\x01\\xc0\\x03\\xc0\\x07\\x80\\x01\\xf0\\x1f\\x00\\x00\\x7f\\xfc\\x00\\x00\\x0f\\xe0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'ghost': b'\\x00\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00\\x1f\\xf0\\x00\\x00\\x7f\\xfc\\x00\\x00\\xff\\xfe\\x00\\x01\\xff\\xff\\x00\\x03\\xff\\xff\\x80\\x03\\xff\\xff\\x80\\x07\\xff\\xff\\xc0\\x07\\xff\\xff\\xc0\\x07\\xc7\\xc7\\xc0\\x07\\x83\\x83\\xc0\\x0f\\xa3\\xa3\\xf0\\x0f\\xa3\\xa3\\xf0\\x0f\\xc7\\xc7\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0c\\xf3\\xcf0\\x08\\xe3\\x8e0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'star': b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\x80\\x00\\x00\\x01\\x80\\x00\\x00\\x01\\x80\\x00\\x00\\x03\\xc0\\x00\\x00\\x03\\xc0\\x00\\x00\\x03\\xc0\\x00\\x00\\x07\\xe0\\x00\\x00\\x07\\xe0\\x00\\x0f\\xff\\xff\\xf0\\x03\\xff\\xff\\xc0\\x01\\xff\\xff\\x80\\x00\\xff\\xff\\x00\\x00\\x7f\\xfe\\x00\\x00\\x1f\\xf8\\x00\\x00\\x1f\\xf8\\x00\\x00?\\xfc\\x00\\x00?\\xfc\\x00\\x00?\\xfc\\x00\\x00|>\x00\\x00x\\x1e\\x00\\x00\`\\x06\\x00\\x00@\\x02\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'thumbs_up': b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xff\\xff\\x00\\x01\\xff\\xff\\x00\\x00?\\xff\\x00\\x000\\xff\\x00\\x00?\\xff\\x00\\x00?\\xff\\x00\\x000\\xff\\x00\\x00?\\xff\\x00\\x00?\\xff\\x00\\x000\\xff\\x00\\x03\\xff\\xff\\x00\\x03\\xff\\xff\\x00\\x03\\xf0\\x00\\x00\\x03\\xf0\\x00\\x00\\x03\\xf0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'fire': b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x1f\\xf8\\x00\\x00\\x1f\\xf8\\x00\\x00\\x1f\\xff\\x00\\x00\\x1f\\xff\\x00\\x00\\x1f\\xff\\x00\\x00\\x1f\\xff\\x00\\x01\\xff\\xff\\xc0\\x01\\xff\\xff\\xc0\\x00\\xff\\xff\\x80\\x00\\x7f\\xff\\x00\\x00\\x7f\\xff\\x00\\x00<?\\x00\\x00<?\\x00\\x00\\x1c?\\x00\\x00\\x0c?\\x00\\x00\\x0c?\\x00\\x00\\x04?\\x00\\x00\\x040\\x00\\x00\\x00 \\x00\\x00\\x01\\xc0\\x00\\x00\\x01\\xc0\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'music': b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x01\\xe0\\x00\\x00\\x0f\\xe0\\x00\\x00\\xff\\xe0\\x00\\x07\\xfe\`\\x00\\x0f\\xf0\`\\x00\\x0f\\x00\`\\x00\\x0c\\x00\`\\x00\\x0c\\x00\`\\x00\\x0c\\x00\`\\x00\\x0c\\x00\`\\x00\\x0c\\x00\`\\x00\\x0c\\x00\`\\x00\\x0c\\x02\`\\x00\\x0c\\x0f\\xe0\\x00\\x0c\\x1f\\xe0\\x00\\x0c\\x1f\\xe0\\x00L?\\xe0\\x01\\xfc\\x1f\\xc0\\x03\\xfc\\x1f\\xc0\\x03\\xfc\\x0f\\x80\\x07\\xfc\\x02\\x00\\x03\\xf8\\x00\\x00\\x03\\xf8\\x00\\x00\\x01\\xf0\\x00\\x00\\x00@\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'lightning': b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00@\\x00\\x00\\x00\\xc0\\x00\\x00\\x01\\xc0\\x00\\x00\\x01\\xc0\\x00\\x00\\x03\\xc0\\x00\\x00\\x07\\xc0\\x00\\x00\\x0f\\xc0\\x00\\x00\\x1f\\xc0\\x00\\x00\\x1f\\xc0\\x00\\x00?\\xc0\\x00\\x00\\x7f\\xff\\x80\\x00\\xff\\xff\\x00\\x00\\xff\\xfe\\x00\\x00\\x01\\xfc\\x00\\x00\\x01\\xf8\\x00\\x00\\x01\\xf8\\x00\\x00\\x03\\xf0\\x00\\x00\\x03\\xe0\\x00\\x00\\x03\\xc0\\x00\\x00\\x03\\x80\\x00\\x00\\x07\\x00\\x00\\x00\\x07\\x00\\x00\\x00\\x06\\x00\\x00\\x00\\x0c\\x00\\x00\\x00\\x08\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'alien': b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x07\\xff\\xff\\xe0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xff\\xff\\xf0\\x0f\\xdf\\xfb\\xf0\\x1f\\x8f\\xf1\\xf8\\x0f\\x07\\xe0\\xf0\\x0f\\x07\\xe0\\xf0\\x0e\\x03\\xc0p\\x0f\\x07\\xe0\\xf0\\x0f\\x07\\xe0\\xf0\\x0f\\x8f\\xf1\\xf0\\x0f\\xff\\xff\\xf0\\x07\\xfd\\xbf\\xe0\\x07\\xff\\xff\\xe0\\x03\\xff\\xff\\xc0\\x03\\xfe\\x7f\\xc0\\x01\\xff\\xff\\x80\\x01\\xff\\xff\\x80\\x00\\xff\\xff\\x00\\x00\\x7f\\xfe\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+    'check': b'\\x00\\x00\\x00\\x00\\x00\\x01\\x00\\x00\\x00?\\xf8\\x00\\x00\\xff\\xfe\\x00\\x01\\xff\\xff\\x00\\x03\\xff\\xff\\x80\\x07\\xff\\xff\\xc0\\x0f\\xff\\xff\\xe0\\x1f\\xff\\xff\\xd0\\x1f\\xff\\xff\\x90?\\xff\\xff\\x18?\\xff\\xfe8?\\xff\\xfcx?\\xff\\xf8\\xf8?\\xff\\xf1\\xf8\\x7f\\xff\\xe3\\xfc?\\x7f\\xc7\\xf8??\\x8f\\xf8?\\x1f\\x1f\\xf8?\\x8e?\\xf8?\\xc4\\x7f\\xf8\\x1f\\xe0\\xff\\xf0\\x1f\\xf1\\xff\\xf0\\x0f\\xfb\\xff\\xe0\\x07\\xff\\xff\\xc0\\x03\\xff\\xff\\x80\\x01\\xff\\xff\\x00\\x00\\xff\\xfe\\x00\\x00?\\xf8\\x00\\x00\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00',
+}
+
+def _draw_native_emoji(name, x=48, y=16):
+    if not hasattr(ten, 'display'): return
+    if not getattr(ten.display, 'oled', None):
+        ten.display.init()
+    d = ten.display.oled
+    if not d: return
+    try:
+        key = str(name).lower()
+        if key in _EMOJI_BITMAPS:
+            fb = framebuf.FrameBuffer(bytearray(_EMOJI_BITMAPS[key]), 32, 32, framebuf.MONO_HLSB)
+            d.fill(0)
+            d.blit(fb, int(x), int(y))
+        else:
+            d.fill(0)
+            d.text(f"[{name}]", 20, 28, 1)
+        d.show()
+    except Exception as e:
+        pass
+`;
+
     Blockly.Blocks['esp32_oled_emoji'] = {
         init: function () {
             this.appendDummyInput()
-                .appendField("Show Emoji")
+                .appendField("🖼️ Show Real Emoji")
                 .appendField(new Blockly.FieldDropdown([
-                    ["Heart", "heart"],
-                    ["Smile", "smile"],
-                    ["Skull", "skull"],
-                    ["Upset", "upset"]
-                ]), "NAME");
+                    ["Smile 😊", "smile"],
+                    ["Heart ❤️", "heart"],
+                    ["Cool Sunglasses 😎", "cool"],
+                    ["Grinning 😀", "grin"],
+                    ["Robot 🤖", "robot"],
+                    ["Cat 🐱", "cat"],
+                    ["Skull 💀", "skull"],
+                    ["Sad / Crying 😢", "sad"],
+                    ["Surprised 😲", "surprised"],
+                    ["Angry 😡", "angry"],
+                    ["Ghost 👻", "ghost"],
+                    ["Star ⭐", "star"],
+                    ["Thumbs Up 👍", "thumbs_up"],
+                    ["Fire / Flame 🔥", "fire"],
+                    ["Music 🎵", "music"],
+                    ["Lightning ⚡", "lightning"],
+                    ["Alien 👽", "alien"],
+                    ["Checkmark ✔️", "check"]
+                ]), "NAME")
+                .appendField("Position")
+                .appendField(new Blockly.FieldDropdown([
+                    ["Center (48, 16)", "48,16"],
+                    ["Left (8, 16)", "8,16"],
+                    ["Right (88, 16)", "88,16"],
+                    ["Top Center (48, 4)", "48,4"],
+                    ["Bottom Center (48, 30)", "48,30"]
+                ]), "POS");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour('#D65CD6');
-            this.setTooltip("Display full-screen emoji");
+            this.setTooltip("Display real 1-bit monochrome bitmap pixel art emoji onto OLED display");
         }
     };
 
     pythonGenerator.forBlock['esp32_oled_emoji'] = function (block) {
         const name = block.getFieldValue('NAME');
-        return `ten.display.emoji("${name}")\n`;
+        const [x, y] = (block.getFieldValue('POS') || "48,16").split(',');
+        pythonGenerator.definitions_['drv_emoji_bitmaps'] = EMOJI_ENGINE;
+        return `_draw_native_emoji("${name}", x=${x}, y=${y})\n`;
     };
 
-    Blockly.Blocks['esp32_eyes_blink'] = {
+    // --- PROCEDURAL OLED ROBOT EYES BLOCKS (STANDALONE MICROPYTHON) ---
+    const ROBOT_EYES_ENGINE = `
+class _RobotEyes:
+    def __init__(self):
+        self.w = 26
+        self.h = 34
+        self.r = 6
+        self.gap = 20
+        self.cx = 64
+        self.cy = 32
+
+    def _disp(self):
+        if hasattr(ten, 'display'):
+            if not getattr(ten.display, 'oled', None):
+                ten.display.init()
+            return ten.display.oled
+        return None
+
+    def _round_rect(self, x, y, w, h, r, col=1):
+        d = self._disp()
+        if not d or w <= 0 or h <= 0: return
+        r = max(0, min(r, w // 2, h // 2))
+        d.fill_rect(int(x + r), int(y), int(max(1, w - 2 * r)), int(h), col)
+        d.fill_rect(int(x), int(y + r), int(r), int(max(1, h - 2 * r)), col)
+        d.fill_rect(int(x + w - r), int(y + r), int(r), int(max(1, h - 2 * r)), col)
+        for dx in range(r):
+            for dy in range(r):
+                if (r - 1 - dx) ** 2 + (r - 1 - dy) ** 2 <= r ** 2:
+                    d.pixel(int(x + dx), int(y + dy), col)
+                    d.pixel(int(x + w - 1 - dx), int(y + dy), col)
+                    d.pixel(int(x + dx), int(y + h - 1 - dy), col)
+                    d.pixel(int(x + w - 1 - dx), int(y + h - 1 - dy), col)
+
+    def _circle(self, x, y, r, c=1):
+        d = self._disp()
+        if not d or r <= 0: return
+        d.hline(int(x - r), int(y), int(r * 2), c)
+        for i in range(1, int(r)):
+            a = int(math.sqrt(r * r - i * i))
+            d.hline(int(x - a), int(y + i), int(a * 2), c)
+            d.hline(int(x - a), int(y - i), int(a * 2), c)
+
+    def _draw_heart(self, cx, cy, size=12, col=1):
+        d = self._disp()
+        if not d: return
+        # Draw heart using two circles and a bottom triangle
+        hr = max(3, size // 3)
+        self._circle(cx - hr, cy - hr // 2, hr, col)
+        self._circle(cx + hr, cy - hr // 2, hr, col)
+        for i in range(size):
+            span = max(1, (size - i) * 2)
+            d.hline(int(cx - span // 2), int(cy + i), int(span), col)
+
+    def _draw_eye(self, cx, cy, w, h, r, mood="NORMAL", look="CENTER", is_left=True):
+        d = self._disp()
+        if not d: return
+        x = int(cx - w // 2)
+        y = int(cy - h // 2)
+
+        if mood == "DEAD":
+            # Bold X mark
+            for t in range(-1, 2):
+                d.line(int(x), int(y + t), int(x + w), int(y + h + t), 1)
+                d.line(int(x + w), int(y + t), int(x), int(y + h + t), 1)
+            return
+
+        if mood == "LOVE":
+            self._draw_heart(cx, cy, size=min(14, h // 2))
+            return
+
+        if mood == "SLEEP":
+            d.hline(int(x), int(cy), int(w), 1)
+            d.hline(int(x), int(cy + 1), int(w), 1)
+            d.hline(int(x + 2), int(cy + 2), int(w - 4), 1)
+            if not is_left:
+                d.text("z", int(cx + w // 2 + 4), int(cy - 14), 1)
+                d.text("Z", int(cx + w // 2 + 12), int(cy - 22), 1)
+            return
+
+        if mood == "DIZZY":
+            # Concentric spiral boxes
+            d.rect(int(x), int(y), int(w), int(h), 1)
+            d.rect(int(x + 4), int(y + 4), int(max(4, w - 8)), int(max(4, h - 8)), 1)
+            d.rect(int(x + 8), int(y + 8), int(max(2, w - 16)), int(max(2, h - 16)), 1)
+            d.fill_rect(int(cx - 2), int(cy - 2), 4, 4, 1)
+            return
+
+        if mood == "HAPPY":
+            # Smiling crescent arch ^ ^
+            self._round_rect(x, y, w, h, r, 1)
+            d.fill_rect(int(x - 2), int(cy), int(w + 4), int(h // 2 + 4), 0)
+            d.line(int(x), int(cy), int(x + w // 2), int(y + 2), 1)
+            d.line(int(x + w // 2), int(y + 2), int(x + w), int(cy), 1)
+            d.line(int(x), int(cy + 1), int(x + w // 2), int(y + 3), 1)
+            d.line(int(x + w // 2), int(y + 3), int(x + w), int(cy + 1), 1)
+            return
+
+        if mood == "THINKING":
+            if is_left:
+                # Left eye squinted
+                self._round_rect(x, cy + 2, w, max(6, h // 3), 2, 1)
+            else:
+                # Right eye wide looking up-right
+                self._round_rect(x, y - 4, w, h, r, 1)
+                # Pupil shifted top-right
+                self._circle(cx + 4, cy - 8, 4, 0)
+                d.text("?", int(cx + w // 2 + 6), int(cy - 18), 1)
+            return
+
+        if mood == "CURIOUS":
+            if is_left:
+                # Enlarged inquisitive eye
+                self._round_rect(x - 3, y - 4, w + 6, h + 8, r + 2, 1)
+                self._circle(cx + 2, cy - 2, 4, 0)
+            else:
+                # Smaller tilted eye
+                self._round_rect(x + 2, y + 4, max(8, w - 4), max(8, h - 8), max(2, r - 2), 1)
+            return
+
+        if mood == "CRYING":
+            self._round_rect(x, y, w, h, r, 1)
+            # Drooping brow
+            for i in range(h // 3):
+                if is_left: d.line(int(x + (i * 2)), int(y), int(x + w), int(y + i), 0)
+                else: d.line(int(x), int(y + i), int(x + w - (i * 2)), int(y), 0)
+            # Falling tear
+            d.fill_rect(int(cx - 2), int(cy + h // 2 + 2), 4, 8, 1)
+            d.pixel(int(cx), int(cy + h // 2 + 11), 1)
+            return
+
+        if mood == "DEVIL":
+            self._round_rect(x, y, w, h, r, 1)
+            # Angry brow
+            for i in range(h // 2):
+                if is_left: d.line(int(x), int(y + i), int(x + w - (i * 2)), int(y), 0)
+                else: d.line(int(x + (i * 2)), int(y), int(x + w), int(y + i), 0)
+            # Devil Horn
+            if is_left:
+                d.line(int(x + 2), int(y), int(x - 4), int(y - 8), 1)
+                d.line(int(x + 8), int(y), int(x - 4), int(y - 8), 1)
+            else:
+                d.line(int(x + w - 2), int(y), int(x + w + 4), int(y - 8), 1)
+                d.line(int(x + w - 8), int(y), int(x + w + 4), int(y - 8), 1)
+            return
+
+        # Default / Normal base
+        self._round_rect(x, y, w, h, r, 1)
+
+        if mood == "ANGRY":
+            for i in range(h // 2):
+                if is_left: d.line(int(x), int(y + i), int(x + w - (i * 2)), int(y), 0)
+                else: d.line(int(x + (i * 2)), int(y), int(x + w), int(y + i), 0)
+        elif mood == "SAD":
+            for i in range(h // 2):
+                if is_left: d.line(int(x + (i * 2)), int(y), int(x + w), int(y + i), 0)
+                else: d.line(int(x), int(y + i), int(x + w - (i * 2)), int(y), 0)
+
+    def show(self, mood="NORMAL", look="CENTER", w=None, h=None, r=None, ox=0, oy=0):
+        d = self._disp()
+        if not d: return
+        w = w if w is not None else self.w
+        h = h if h is not None else self.h
+        r = r if r is not None else self.r
+        dx, dy = 0, 0
+        if look == "LEFT": dx = -14
+        elif look == "RIGHT": dx = 14
+        elif look == "UP": dy = -8
+        elif look == "DOWN": dy = 8
+        elif look == "TOP_LEFT": dx, dy = -10, -6
+        elif look == "TOP_RIGHT": dx, dy = 10, -6
+        elif look == "BOTTOM_LEFT": dx, dy = -10, 6
+        elif look == "BOTTOM_RIGHT": dx, dy = 10, 6
+        
+        lx = (self.cx - self.gap // 2 - w // 2) + dx + ox
+        rx = (self.cx + self.gap // 2 + w // 2) + dx + ox
+        cy = self.cy + dy + oy
+
+        d.fill(0)
+        if mood == "WINK_LEFT":
+            self._draw_eye(lx, cy, w, h, r, "SLEEP", look, is_left=True)
+            self._draw_eye(rx, cy, w, h, r, "NORMAL", look, is_left=False)
+        elif mood == "WINK_RIGHT":
+            self._draw_eye(lx, cy, w, h, r, "NORMAL", look, is_left=True)
+            self._draw_eye(rx, cy, w, h, r, "SLEEP", look, is_left=False)
+        elif mood == "SQUINT":
+            self._draw_eye(lx, cy, w, max(6, h // 3), 2, "NORMAL", look, is_left=True)
+            self._draw_eye(rx, cy, w, max(6, h // 3), 2, "NORMAL", look, is_left=False)
+        elif mood == "SURPRISED":
+            self._draw_eye(lx, cy, w + 6, h + 8, r + 4, "NORMAL", look, is_left=True)
+            self._draw_eye(rx, cy, w + 6, h + 8, r + 4, "NORMAL", look, is_left=False)
+            self._circle(lx, cy, 3, 0)
+            self._circle(rx, cy, 3, 0)
+        else:
+            self._draw_eye(lx, cy, w, h, r, mood, look, is_left=True)
+            self._draw_eye(rx, cy, w, h, r, mood, look, is_left=False)
+        d.show()
+
+    def animate(self, anim="BLINK", mood="NORMAL", look="CENTER", speed_ms=30):
+        d = self._disp()
+        if not d: return
+        if anim == "BLINK":
+            for sh in [self.h, self.h * 2 // 3, self.h // 3, 2, self.h // 3, self.h * 2 // 3, self.h]:
+                self.show(mood=mood, look=look, h=max(2, int(sh)), r=min(self.r, max(1, int(sh) // 3)))
+                time.sleep_ms(speed_ms)
+        elif anim == "DOUBLE_BLINK":
+            for _ in range(2):
+                for sh in [self.h, self.h // 3, 2, self.h // 3, self.h]:
+                    self.show(mood=mood, look=look, h=max(2, int(sh)))
+                    time.sleep_ms(speed_ms)
+                time.sleep_ms(speed_ms * 2)
+        elif anim == "LOOK_AROUND":
+            for lk in ["CENTER", "LEFT", "TOP_LEFT", "UP", "TOP_RIGHT", "RIGHT", "CENTER"]:
+                self.show(mood=mood, look=lk)
+                time.sleep_ms(max(100, speed_ms * 4))
+        elif anim == "WINK":
+            self.show(mood="WINK_LEFT", look=look)
+            time.sleep_ms(max(150, speed_ms * 6))
+            self.show(mood="NORMAL", look=look)
+        elif anim == "WAKEUP":
+            for sh in [2, 6, 12, 20, self.h]:
+                self.show(mood="NORMAL", look=look, h=int(sh))
+                time.sleep_ms(speed_ms * 2)
+        elif anim == "FALL_ASLEEP":
+            for sh in [self.h, 20, 12, 6, 2]:
+                self.show(mood="NORMAL", look=look, h=int(sh))
+                time.sleep_ms(speed_ms * 2)
+            self.show(mood="SLEEP", look=look)
+        elif anim == "HAPPY_BOUNCE":
+            for oy in [0, -6, 0, -4, 0, -2, 0]:
+                self.show(mood="HAPPY", look=look, oy=oy)
+                time.sleep_ms(speed_ms * 2)
+        elif anim == "ANGRY_SHAKE":
+            for ox in [0, -4, 4, -3, 3, -1, 1, 0]:
+                self.show(mood="ANGRY", look=look, ox=ox)
+                time.sleep_ms(speed_ms)
+        elif anim == "DIZZY_SPIN":
+            for ang in range(4):
+                self.show(mood="DIZZY", ox=(ang % 2) * 2, oy=((ang + 1) % 2) * 2)
+                time.sleep_ms(speed_ms * 3)
+        elif anim == "CURIOUS_TILT":
+            self.show(mood="CURIOUS")
+            time.sleep_ms(speed_ms * 8)
+            self.show(mood="NORMAL")
+        elif anim == "ROLL":
+            self.spidermaf_look("ROLL")
+
+    def draw_spidermaf_eyes(self, plh=0, prh=0, plv=0, eye_r=16, pupil_r=7, exl=38, exr=90, ey=32):
+        d = self._disp()
+        if not d: return
+        d.fill(0)
+        self._circle(exl, ey, eye_r, 1)
+        self._circle(exr, ey, eye_r, 1)
+        self._circle(exl + plh, ey + plv, pupil_r, 0)
+        self._circle(exr + prh, ey + plv, pupil_r, 0)
+        d.show()
+
+    def spidermaf_look(self, direction="CENTER", eye_r=16, pupil_r=7):
+        d = self._disp()
+        if not d: return
+        max_h = max(2, eye_r - pupil_r - 2)
+        max_v = max(2, eye_r - pupil_r - 2)
+        if direction == "CENTER":
+            self.draw_spidermaf_eyes(0, 0, 0, eye_r, pupil_r)
+        elif direction == "LEFT":
+            self.draw_spidermaf_eyes(-max_h, -max_h, 0, eye_r, pupil_r)
+        elif direction == "RIGHT":
+            self.draw_spidermaf_eyes(max_h, max_h, 0, eye_r, pupil_r)
+        elif direction == "UP":
+            self.draw_spidermaf_eyes(0, 0, -max_v, eye_r, pupil_r)
+        elif direction == "DOWN":
+            self.draw_spidermaf_eyes(0, 0, max_v, eye_r, pupil_r)
+        elif direction == "TOP_LEFT":
+            self.draw_spidermaf_eyes(-max_h + 1, -max_h + 1, -max_v + 1, eye_r, pupil_r)
+        elif direction == "TOP_RIGHT":
+            self.draw_spidermaf_eyes(max_h - 1, max_h - 1, -max_v + 1, eye_r, pupil_r)
+        elif direction == "BOTTOM_LEFT":
+            self.draw_spidermaf_eyes(-max_h + 1, -max_h + 1, max_v - 1, eye_r, pupil_r)
+        elif direction == "BOTTOM_RIGHT":
+            self.draw_spidermaf_eyes(max_h - 1, max_h - 1, max_v - 1, eye_r, pupil_r)
+        elif direction == "ROLL":
+            for d_name in ["CENTER", "LEFT", "TOP_LEFT", "UP", "TOP_RIGHT", "RIGHT", "BOTTOM_RIGHT", "DOWN", "BOTTOM_LEFT", "CENTER"]:
+                self.spidermaf_look(d_name, eye_r, pupil_r)
+                time.sleep_ms(80)
+        elif direction == "LOOK_LEFT":
+            self.spidermaf_look("LEFT", eye_r, pupil_r)
+            time.sleep_ms(300)
+            self.spidermaf_look("CENTER", eye_r, pupil_r)
+        elif direction == "LOOK_RIGHT":
+            self.spidermaf_look("RIGHT", eye_r, pupil_r)
+            time.sleep_ms(300)
+            self.spidermaf_look("CENTER", eye_r, pupil_r)
+        elif direction == "LOOK_UP":
+            self.spidermaf_look("UP", eye_r, pupil_r)
+            time.sleep_ms(300)
+            self.spidermaf_look("CENTER", eye_r, pupil_r)
+        elif direction == "LOOK_DOWN":
+            self.spidermaf_look("DOWN", eye_r, pupil_r)
+            time.sleep_ms(300)
+            self.spidermaf_look("CENTER", eye_r, pupil_r)
+        elif direction == "RANDOM":
+            dirs = ["CENTER", "LEFT", "RIGHT", "UP", "DOWN", "TOP_LEFT", "TOP_RIGHT"]
+            chosen = dirs[random.randint(0, len(dirs) - 1)]
+            self.spidermaf_look(chosen, eye_r, pupil_r)
+
+robot_eyes = _RobotEyes()
+`;
+
+    Blockly.Blocks['esp32_eyes_expression'] = {
         init: function () {
             this.appendDummyInput()
-                .appendField("Eyes")
+                .appendField("👀 Robot Eyes Mood")
                 .appendField(new Blockly.FieldDropdown([
-                    ["Smooth Blink", "blink"],
-                    ["Happy Animation", "happy_eye"],
-                    ["Angry Smooth", "angry"],
-                    ["Sad Smooth", "sad"],
-                    ["Surprised Smooth", "surprised"],
-                    ["Squint Smooth", "squint"],
-                    ["Thinking Smooth", "thinking"],
-                    ["Wakeup Sequence", "wakeup"]
-                ]), "ACTION");
+                    ["Normal 😊", "NORMAL"],
+                    ["Happy ^ ^", "HAPPY"],
+                    ["Angry > <", "ANGRY"],
+                    ["Sad / \\", "SAD"],
+                    ["Thinking 🤔", "THINKING"],
+                    ["Curious 🧐", "CURIOUS"],
+                    ["Surprised 😲", "SURPRISED"],
+                    ["Squint 😑", "SQUINT"],
+                    ["Sleep - -", "SLEEP"],
+                    ["Wink Left 😉", "WINK_LEFT"],
+                    ["Wink Right 😉", "WINK_RIGHT"],
+                    ["Love ❤️", "LOVE"],
+                    ["Dizzy 😵 @ @", "DIZZY"],
+                    ["Crying 😢", "CRYING"],
+                    ["Devil 😈", "DEVIL"],
+                    ["KO / Dead ✕ ✕", "DEAD"]
+                ]), "MOOD")
+                .appendField("Look")
+                .appendField(new Blockly.FieldDropdown([
+                    ["Center ⏺", "CENTER"],
+                    ["Left ◀", "LEFT"],
+                    ["Right ▶", "RIGHT"],
+                    ["Up ▲", "UP"],
+                    ["Down ▼", "DOWN"],
+                    ["Top-Left ◤", "TOP_LEFT"],
+                    ["Top-Right ◥", "TOP_RIGHT"],
+                    ["Bottom-Left ◣", "BOTTOM_LEFT"],
+                    ["Bottom-Right ◢", "BOTTOM_RIGHT"]
+                ]), "LOOK");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
-            this.setColour('#33CABD');
-            this.setTooltip("Smooth, high-fidelity blink and eye animations");
+            this.setColour('#D65CD6');
+            this.setTooltip("Display expressive robotic eyes on OLED display");
         }
     };
 
-    pythonGenerator.forBlock['esp32_eyes_blink'] = function (block) {
-        const action = block.getFieldValue('ACTION');
-        pythonGenerator.definitions_['drv_eyes_v2'] = 'import ten_eyes\neyes_v2 = ten_eyes.get_eyes()';
-        return `eyes_v2.${action}()\n`;
+    pythonGenerator.forBlock['esp32_eyes_expression'] = function (block) {
+        const mood = block.getFieldValue('MOOD');
+        const look = block.getFieldValue('LOOK');
+        pythonGenerator.definitions_['drv_robot_eyes'] = ROBOT_EYES_ENGINE;
+        return `robot_eyes.show(mood="${mood}", look="${look}")\n`;
+    };
+
+    Blockly.Blocks['esp32_eyes_animate'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("👀 Animate Eyes")
+                .appendField(new Blockly.FieldDropdown([
+                    ["Blink Sequence", "BLINK"],
+                    ["Double Blink", "DOUBLE_BLINK"],
+                    ["Look Around", "LOOK_AROUND"],
+                    ["Quick Wink", "WINK"],
+                    ["Wake Up", "WAKEUP"],
+                    ["Fall Asleep", "FALL_ASLEEP"],
+                    ["Happy Bounce", "HAPPY_BOUNCE"],
+                    ["Angry Shake", "ANGRY_SHAKE"],
+                    ["Dizzy Spin", "DIZZY_SPIN"],
+                    ["Curious Tilt", "CURIOUS_TILT"],
+                    ["Roll Eyes 360", "ROLL"]
+                ]), "ANIM")
+                .appendField("Speed")
+                .appendField(new Blockly.FieldDropdown([
+                    ["Fast (20ms)", "20"],
+                    ["Normal (35ms)", "35"],
+                    ["Slow (60ms)", "60"]
+                ]), "SPEED");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#D65CD6');
+            this.setTooltip("Play smooth procedural eye animation sequence");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_eyes_animate'] = function (block) {
+        const anim = block.getFieldValue('ANIM');
+        const speed = block.getFieldValue('SPEED') || '35';
+        pythonGenerator.definitions_['drv_robot_eyes'] = ROBOT_EYES_ENGINE;
+        return `robot_eyes.animate("${anim}", speed_ms=${speed})\n`;
+    };
+
+    Blockly.Blocks['esp32_eyes_custom'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("👀 Custom Eyes Width")
+                .appendField(new Blockly.FieldNumber(26, 8, 48, 1), "W")
+                .appendField("Height")
+                .appendField(new Blockly.FieldNumber(34, 4, 56, 1), "H")
+                .appendField("Radius")
+                .appendField(new Blockly.FieldNumber(6, 0, 20, 1), "R")
+                .appendField("Offset X")
+                .appendField(new Blockly.FieldNumber(0, -30, 30, 1), "OX")
+                .appendField("Y")
+                .appendField(new Blockly.FieldNumber(0, -20, 20, 1), "OY");
+            this.setInputsInline(true);
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#D65CD6');
+            this.setTooltip("Design custom robotic eyes geometry");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_eyes_custom'] = function (block) {
+        const w = block.getFieldValue('W');
+        const h = block.getFieldValue('H');
+        const r = block.getFieldValue('R');
+        const ox = block.getFieldValue('OX');
+        const oy = block.getFieldValue('OY');
+        pythonGenerator.definitions_['drv_robot_eyes'] = ROBOT_EYES_ENGINE;
+        return `robot_eyes.show(mood="NORMAL", w=${w}, h=${h}, r=${r}, ox=${ox}, oy=${oy})\n`;
+    };
+
+    Blockly.Blocks['esp32_spidermaf_eyes'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("👁️ SpiderMaf Eyes Look")
+                .appendField(new Blockly.FieldDropdown([
+                    ["Center ⏺", "CENTER"],
+                    ["Left ◀", "LEFT"],
+                    ["Right ▶", "RIGHT"],
+                    ["Up ▲", "UP"],
+                    ["Down ▼", "DOWN"],
+                    ["Top-Left ◤", "TOP_LEFT"],
+                    ["Top-Right ◥", "TOP_RIGHT"],
+                    ["Bottom-Left ◣", "BOTTOM_LEFT"],
+                    ["Bottom-Right ◢", "BOTTOM_RIGHT"],
+                    ["Roll Eyes 🔄", "ROLL"],
+                    ["Glance Left & Back ◀", "LOOK_LEFT"],
+                    ["Glance Right & Back ▶", "LOOK_RIGHT"],
+                    ["Glance Up & Back ▲", "LOOK_UP"],
+                    ["Glance Down & Back ▼", "LOOK_DOWN"],
+                    ["Random Gaze 🎲", "RANDOM"]
+                ]), "DIR")
+                .appendField("Size")
+                .appendField(new Blockly.FieldDropdown([
+                    ["Normal (R=16, Pupil=7)", "16,7"],
+                    ["Large (R=20, Pupil=9)", "20,9"],
+                    ["Small (R=12, Pupil=5)", "12,5"]
+                ]), "SIZE");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#A855F7');
+            this.setTooltip("SpiderMaf OLED animated eyes with circular iris and moving black pupils");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_spidermaf_eyes'] = function (block) {
+        const dir = block.getFieldValue('DIR');
+        const [eyeR, pupilR] = (block.getFieldValue('SIZE') || "16,7").split(',');
+        pythonGenerator.definitions_['drv_robot_eyes'] = ROBOT_EYES_ENGINE;
+        return `robot_eyes.spidermaf_look("${dir}", eye_r=${eyeR}, pupil_r=${pupilR})\n`;
+    };
+
+    Blockly.Blocks['esp32_spidermaf_custom'] = {
+        init: function () {
+            this.appendDummyInput()
+                .appendField("👁️ SpiderMaf Custom: Eye Radius")
+                .appendField(new Blockly.FieldNumber(16, 6, 24, 1), "EYE_R")
+                .appendField("Pupil Radius")
+                .appendField(new Blockly.FieldNumber(7, 2, 14, 1), "PUPIL_R")
+                .appendField("Pupil Offset X")
+                .appendField(new Blockly.FieldNumber(0, -12, 12, 1), "OX")
+                .appendField("Y")
+                .appendField(new Blockly.FieldNumber(0, -12, 12, 1), "OY");
+            this.setInputsInline(true);
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour('#A855F7');
+            this.setTooltip("Custom SpiderMaf eyes with precise pupil offset positions");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_spidermaf_custom'] = function (block) {
+        const eyeR = block.getFieldValue('EYE_R');
+        const pupilR = block.getFieldValue('PUPIL_R');
+        const ox = block.getFieldValue('OX');
+        const oy = block.getFieldValue('OY');
+        pythonGenerator.definitions_['drv_robot_eyes'] = ROBOT_EYES_ENGINE;
+        return `robot_eyes.draw_spidermaf_eyes(plh=${ox}, prh=${ox}, plv=${oy}, eye_r=${eyeR}, pupil_r=${pupilR})\n`;
     };
 
     // --- POWER SENSOR (INA219) BLOCKS ---
@@ -740,8 +1548,13 @@ def ${funcName}():
         if (until) {
             condition = 'not ' + condition;
         }
+        if (!branch || branch.trim() === '') {
+            branch = '    ten.delay(10)\n';
+        } else if (!branch.includes('ten.delay') && !branch.includes('time.sleep')) {
+            branch = branch + '    ten.delay(2)\n';
+        }
         // Injected ten.is_running() to allow the firmware to break the loop
-        return `while ${condition} and ten.is_running():\n${branch}\n`;
+        return `while ${condition} and ten.is_running():\n${branch}`;
     };
 
     pythonGenerator.forBlock['controls_repeat_ext'] = function (block) {
@@ -753,9 +1566,14 @@ def ${funcName}():
         }
         let branch = pythonGenerator.statementToCode(block, 'DO');
         branch = pythonGenerator.addLoopTrap(branch, block);
+        if (!branch || branch.trim() === '') {
+            branch = '    ten.delay(10)\n';
+        } else if (!branch.includes('ten.delay') && !branch.includes('time.sleep')) {
+            branch = branch + '    ten.delay(2)\n';
+        }
         const loopVar = pythonGenerator.nameDB_.getDistinctName('count', Blockly.utils.NameType.VARIABLE);
         // Inject is_running check inside for loops to allow breaking mid-run
-        return `for ${loopVar} in range(${repeats}):\n    if not ten.is_running(): break\n${branch}\n`;
+        return `for ${loopVar} in range(${repeats}):\n    if not ten.is_running(): break\n${branch}`;
     };
 
 

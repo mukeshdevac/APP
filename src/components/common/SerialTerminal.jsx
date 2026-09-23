@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Terminal as TerminalIcon, Trash2, Activity } from 'lucide-react';
+import { Terminal as TerminalIcon, Trash2, Activity, Zap, Battery } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import useAppStore from '../../store/appStore';
 
 /** Move outside component — stable pure function, no need to re-create on every render */
 const stripAnsi = (str) =>
@@ -8,6 +9,7 @@ const stripAnsi = (str) =>
 
 const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false }) => {
     const terminalRef = useRef(null);
+    const telemetry = useAppStore(s => s.telemetry);
 
     // Auto-scroll
     useEffect(() => {
@@ -27,7 +29,6 @@ const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false }) => {
         for (let i = lines.length - 1; i >= 0; i--) {
             const match = lines[i].match(/SENSOR:\s*([\d.]+)/i);
             if (match) {
-                // Ensure value is between 0 and 100 for the bar
                 let val = parseFloat(match[1]);
                 if (val > 100) val = 100;
                 if (val < 0) val = 0;
@@ -36,6 +37,12 @@ const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false }) => {
         }
         return null;
     }, [logs]);
+
+    const battVolts = telemetry?.v || 0;
+    const battPct = telemetry?.pct !== undefined ? telemetry.pct : (telemetry?.b !== undefined ? telemetry.b : 0);
+    const battMa = telemetry?.ma || 0;
+    const battPower = telemetry?.p || 0;
+    const hasTelemetry = battVolts > 0 || battPct > 0 || battMa !== 0;
 
     return (
         <div className={isEmbedded ? "" : "glass"} style={{
@@ -55,6 +62,31 @@ const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false }) => {
                     <button onClick={onClear} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '5px' }}>
                         <Trash2 size={16} />
                     </button>
+                </div>
+            )}
+
+            {/* Live Power & Battery Telemetry HUD */}
+            {hasTelemetry && (
+                <div style={{
+                    padding: '8px 15px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    borderBottom: '1px solid var(--border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: '0.75rem',
+                    fontFamily: 'monospace'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontWeight: 'bold' }}>
+                        <Battery size={14} />
+                        <span>{battVolts.toFixed(2)}V ({battPct}%)</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#38bdf8' }}>
+                            <Zap size={12} /> {battMa.toFixed(1)} mA
+                        </span>
+                        <span>{battPower.toFixed(2)} W</span>
+                    </div>
                 </div>
             )}
 

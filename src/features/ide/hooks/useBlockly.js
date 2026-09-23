@@ -19,10 +19,74 @@ export const useBlockly = (project) => {
                 contents: [
                     {
                         kind: 'category',
+                        name: 'DIGITAL',
+                        colour: '#0284C7',
+                        contents: [
+                            { kind: 'block', type: 'esp32_digital_write' },
+                            { kind: 'block', type: 'esp32_digital_read' },
+                            { kind: 'block', type: 'esp32_digital_toggle' },
+                            { kind: 'block', type: 'esp32_led_builtin' },
+                        ],
+                    },
+                    {
+                        kind: 'category',
+                        name: 'ANALOG',
+                        colour: '#0D9488',
+                        contents: [
+                            { kind: 'block', type: 'esp32_analog_read' },
+                            { kind: 'block', type: 'esp32_analog_read_voltage' },
+                            { kind: 'block', type: 'esp32_pwm_write', inputs: { DUTY: { shadow: { type: 'math_number', fields: { NUM: 512 } } } } },
+                            { kind: 'block', type: 'esp32_pwm_freq', inputs: { FREQ: { shadow: { type: 'math_number', fields: { NUM: 1000 } } } } },
+                        ],
+                    },
+                    {
+                        kind: 'category',
+                        name: 'I2C',
+                        colour: '#06B6D4',
+                        contents: [
+                            { kind: 'block', type: 'esp32_i2c_scan' },
+                            { kind: 'block', type: 'esp32_i2c_read' },
+                            { kind: 'block', type: 'esp32_i2c_write', inputs: { VALUE: { shadow: { type: 'math_number', fields: { NUM: 0 } } } } },
+                            { kind: 'block', type: 'esp32_i2c_mpu6050' },
+                            { kind: 'block', type: 'esp32_i2c_temp' },
+                        ],
+                    },
+                    {
+                        kind: 'category',
+                        name: 'SERIAL',
+                        colour: '#8B5CF6',
+                        contents: [
+                            {
+                                kind: 'block',
+                                type: 'esp32_serial_print',
+                                inputs: {
+                                    TEXT: { shadow: { type: 'text', fields: { TEXT: 'Hello TEN DevKit' } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'esp32_serial_print_var',
+                                inputs: {
+                                    VAL: { shadow: { type: 'math_number', fields: { NUM: 0 } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'esp32_broadcast',
+                                inputs: {
+                                    VAL: { shadow: { type: 'ten_number_100', fields: { NUM: 50 } } }
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        kind: 'category',
                         name: 'MOTION',
                         colour: '#4C97FF',
                         contents: [
-                            { kind: 'block', type: 'esp32_motor', inputs: { SPEED: { shadow: { type: 'ten_number_100', fields: { NUM: 100 } } } } },
+                            { kind: 'block', type: 'esp32_motor', inputs: { SPEED: { shadow: { type: 'ten_number_100', fields: { NUM: 80 } } } } },
+                            { kind: 'block', type: 'esp32_dual_motor', inputs: { LEFT_SPEED: { shadow: { type: 'ten_number_100', fields: { NUM: 80 } } }, RIGHT_SPEED: { shadow: { type: 'ten_number_100', fields: { NUM: 80 } } } } },
+                            { kind: 'block', type: 'esp32_stop_all_motors' },
                             { kind: 'block', type: 'esp32_output', inputs: { SPEED: { shadow: { type: 'ten_number_100', fields: { NUM: 100 } } } } },
                             { kind: 'block', type: 'esp32_servo', inputs: { ANGLE: { shadow: { type: 'math_number', fields: { NUM: 90 } } } } },
                             { kind: 'block', type: 'esp32_servo_center' },
@@ -32,7 +96,53 @@ export const useBlockly = (project) => {
                             { kind: 'block', type: 'esp32_stepper', inputs: { STEPS: { shadow: { type: 'math_number', fields: { NUM: 200 } } } } },
                             { kind: 'block', type: 'esp32_stepper_degrees', inputs: { DEGREES: { shadow: { type: 'math_number', fields: { NUM: 360 } } } } },
                             { kind: 'block', type: 'esp32_stepper_stop' },
-                            { kind: 'block', type: 'esp32_digital_write' },
+                        ],
+                    },
+                    {
+                        kind: 'category',
+                        name: 'SENSORS',
+                        colour: '#3B82F6',
+                        contents: [
+                            { kind: 'block', type: 'esp32_sensor_read' },
+                            { kind: 'block', type: 'esp32_ultrasonic_read' },
+                            { kind: 'block', type: 'esp32_get_battery' },
+                            { kind: 'block', type: 'esp32_get_voltage' },
+                            { kind: 'block', type: 'esp32_get_current' },
+                            { kind: 'block', type: 'esp32_get_power' },
+                        ],
+                    },
+                    {
+                        kind: 'category',
+                        name: 'DISPLAY',
+                        colour: '#475569',
+                        contents: [
+                            { kind: 'block', type: 'esp32_oled_print', inputs: { TEXT: { shadow: { type: 'text', fields: { TEXT: 'Hello' } } }, LINE: { shadow: { type: 'math_number', fields: { NUM: 0 } } } } },
+                            { kind: 'block', type: 'esp32_oled_clear' },
+                            { kind: 'block', type: 'esp32_oled_sensor_view' },
+                            { kind: 'block', type: 'esp32_oled_sensor_full' },
+                        ],
+                    },
+                    {
+                        kind: 'category',
+                        name: 'EYES & EMOJI',
+                        colour: '#D65CD6',
+                        contents: [
+                             { kind: 'block', type: 'esp32_spidermaf_eyes' },
+                             { kind: 'block', type: 'esp32_spidermaf_custom' },
+                             { kind: 'block', type: 'esp32_eyes_expression' },
+                             { kind: 'block', type: 'esp32_eyes_animate' },
+                             { kind: 'block', type: 'esp32_eyes_custom' },
+                             { kind: 'block', type: 'esp32_oled_emoji' },
+                        ],
+                    },
+                    {
+                        kind: 'category',
+                        name: 'TIME',
+                        colour: '#FFAB19',
+                        contents: [
+                            { kind: 'block', type: 'wait_seconds', inputs: { SECONDS: { shadow: { type: 'math_number', fields: { NUM: 1 } } } } },
+                            { kind: 'block', type: 'wait_ms', inputs: { MS: { shadow: { type: 'math_number', fields: { NUM: 100 } } } } },
+                            { kind: 'block', type: 'esp32_get_uptime' },
                         ],
                     },
                     {
@@ -59,68 +169,6 @@ export const useBlockly = (project) => {
                     },
                     {
                         kind: 'category',
-                        name: 'TIME',
-                        colour: '#FFAB19',
-                        contents: [
-                            { kind: 'block', type: 'wait_seconds', inputs: { SECONDS: { shadow: { type: 'math_number', fields: { NUM: 1 } } } } },
-                            { kind: 'block', type: 'wait_ms', inputs: { MS: { shadow: { type: 'math_number', fields: { NUM: 100 } } } } },
-                            { kind: 'block', type: 'esp32_get_uptime' },
-                        ],
-                    },
-                    {
-                        kind: 'category',
-                        name: 'SENSORS',
-                        colour: '#4CBFE6',
-                        contents: [
-                            { kind: 'block', type: 'esp32_sensor_read' },
-                            { kind: 'block', type: 'esp32_ultrasonic_read' },
-                            { kind: 'block', type: 'esp32_i2c_read' },
-                            { kind: 'block', type: 'esp32_i2c_write', inputs: { VALUE: { shadow: { type: 'math_number', fields: { NUM: 0 } } } } },
-                            { kind: 'block', type: 'esp32_i2c_scan' },
-                            { kind: 'block', type: 'esp32_i2c_mpu6050' },
-                            { kind: 'block', type: 'esp32_i2c_temp' },
-                            {
-                                kind: 'block',
-                                type: 'esp32_broadcast',
-                                inputs: {
-                                    VAL: { shadow: { type: 'ten_number_100', fields: { NUM: 0 } } }
-                                }
-                            },
-                        ],
-                    },
-                    {
-                        kind: 'category',
-                        name: 'EYES',
-                        colour: '#33CABD',
-                        contents: [
-                             { kind: 'block', type: 'esp32_eyes_blink' },
-                        ],
-                    },
-                    {
-                        kind: 'category',
-                        name: 'EMOJI',
-                        colour: '#D65CD6',
-                        contents: [
-                             { kind: 'block', type: 'esp32_oled_emoji' },
-                        ],
-                    },
-                     {
-                        kind: 'category',
-                        name: 'DISPLAY',
-                        colour: '#475569',
-                        contents: [
-                             { kind: 'block', type: 'esp32_oled_sensor_full' },
-                             { kind: 'block', type: 'esp32_oled_sensor_view' },
-                             { kind: 'block', type: 'esp32_oled_print', inputs: { TEXT: { shadow: { type: 'text', fields: { TEXT: 'Hello' } } }, LINE: { shadow: { type: 'math_number', fields: { NUM: 0 } } } } },
-                             { kind: 'block', type: 'esp32_oled_clear' },
-                             { kind: 'block', type: 'esp32_get_battery' },
-                             { kind: 'block', type: 'esp32_get_voltage' },
-                             { kind: 'block', type: 'esp32_get_current' },
-                             { kind: 'block', type: 'esp32_get_power' },
-                        ],
-                    },
-                    {
-                        kind: 'category',
                         name: 'MATH',
                         colour: '#59C059',
                         contents: [
@@ -134,6 +182,16 @@ export const useBlockly = (project) => {
                             { kind: 'block', type: 'math_random_int', inputs: { FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } }, TO: { shadow: { type: 'math_number', fields: { NUM: 100 } } } } },
                             { kind: 'block', type: 'math_random_float' },
                         ],
+                    },
+                    {
+                        kind: 'category',
+                        name: 'TEXT',
+                        colour: '#9333EA',
+                        contents: [
+                            { kind: 'block', type: 'text' },
+                            { kind: 'block', type: 'text_join' },
+                            { kind: 'block', type: 'text_length' },
+                        ]
                     },
                     {
                         kind: 'category',
@@ -244,9 +302,9 @@ export const useBlockly = (project) => {
             pythonGenerator.definitions_ = Object.create(null);
             
             // 5. Build final code structure
-            const needsOLED = rawBody.includes('ten.display.') || rawBody.includes('eyes_v2');
+            const needsOLED = rawBody.includes('ten.display.') || rawBody.includes('eyes_v2') || rawBody.includes('robot_eyes') || (definitions && definitions.includes('_RobotEyes')) || (definitions && definitions.includes('_EMOJI_BITMAPS'));
             
-            let code = `import machine, time, ten, gc\n\n`;
+            let code = `import machine, time, ten, gc, math, random, framebuf\n\n`;
             if (definitions) {
                 code += `# --- HARDWARE ---\n${definitions}\n\n`;
             }

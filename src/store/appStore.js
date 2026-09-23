@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 /**
  * Global application store.
- * Replaces multiple useState calls scattered across App.jsx.
+ * Manages view routing, project state, device connectivity, and live battery telemetry.
  */
 const useAppStore = create((set) => ({
   // Navigation
@@ -13,7 +13,15 @@ const useAppStore = create((set) => ({
   isConnected: false,
   isRunning: false,
   uploadProgress: 0,
-  telemetry: { v: 0, i: 0, p: 0, b: 0 },
+  
+  // Power & Battery Telemetry
+  telemetry: {
+    v: 0.0,    // Voltage (e.g. 7.4V)
+    pct: 0,    // Battery Percentage (0-100%)
+    ma: 0.0,   // Current in mA
+    p: 0.0,    // Power in Watts
+    b: 0       // Alias for percentage
+  },
 
   // Terminal logs (capped at 200 entries)
   logs: [],
@@ -34,7 +42,13 @@ const useAppStore = create((set) => ({
 
   setUploadProgress: (uploadProgress) => set({ uploadProgress }),
 
-  setTelemetry: (telemetry) => set({ telemetry }),
+  setTelemetry: (telemetry) => set((state) => ({
+    telemetry: {
+      ...state.telemetry,
+      ...telemetry,
+      pct: telemetry.pct !== undefined ? telemetry.pct : (telemetry.b !== undefined ? telemetry.b : state.telemetry.pct)
+    }
+  })),
 
   addLog: (line) =>
     set((state) => ({

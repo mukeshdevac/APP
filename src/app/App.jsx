@@ -55,10 +55,15 @@ function App() {
       }
       if (msg.startsWith('ERR:')) {
         toast.error('Device Error: ' + msg.substring(4));
+        addLog(line);
         return;
       }
       addLog(line);
       if (msg.includes('>>>')) setRunning(false);
+    };
+
+    connectionManager.onStatusChange = (status) => {
+      setRunning(status === 'RUNNING');
     };
 
     connectionManager.onDisconnect = () => {
@@ -111,17 +116,14 @@ function App() {
     }
     setUploadProgress(1);
     try {
-      addLog('\n[UPLOAD] Initiating transfer...\n');
       await connectionManager.uploadCode(code, (p) => setUploadProgress(p));
-      addLog('[UPLOAD] Success. Code stored in memory.\n');
       toast.success('Code uploaded successfully!');
     } catch (err) {
-      addLog(`[UPLOAD] FAILED: ${err.message}\n`);
       toast.error('Upload failed: ' + err.message);
     } finally {
       setUploadProgress(0);
     }
-  }, [isConnected, addLog, setUploadProgress]);
+  }, [isConnected, setUploadProgress]);
 
   const tv = pageVariants[view] || pageVariants.store;
 

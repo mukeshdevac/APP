@@ -1,159 +1,189 @@
 import sys
-# Ensure filesystem path is first, but keep .frozen as fallback
-if '' not in sys.path: sys.path.insert(0, '')
-for mod in ['store_manager', 'ten', 'sync_master', 'hardware']:
-    if mod in sys.modules: del sys.modules[mod]
+if '' not in sys.path:
+    sys.path.insert(0, '')
+for mod in ['store_manager', 'wifi_manager', 'ble_manager', 'ten', 'hardware', 'buzzer', 'eyes', 'logo']:
+    if mod in sys.modules:
+        del sys.modules[mod]
 
 import machine
-
-# --- HARDWARE SAFETY: Liberate GPIO 15 & Force Motors LOW ---
-# The ESP32 boot ROM attaches UART0 to GPIO 15. We must explicitly remap UART0
-# to pins 1 and 3 to free GPIO 15, otherwise it remains stuck HIGH (7.6V) forever!
-try:
-    machine.UART(0, tx=1, rx=3)
-except:
-    pass
-
-_safe_pwms = []
-for p in [14, 15, 26, 27, 25, 23, 4, 5]:
-    try:
-        pwm = machine.PWM(machine.Pin(p), freq=1000)
-        pwm.duty(0)
-        _safe_pwms.append(pwm)
-    except:
-        pass
-
 import gc
 import time
 import os
 import store_manager
-import select
+from buzzer import buzzer
+import ten
 
-# -- WDT and WDT Feeder Timer -------------------------------------------------
-print("Initializing WDT (Timer 2)...")
-try:
-    wdt = machine.WDT(timeout=15000)   # 15 second timeout
-    wdt_timer = machine.Timer(2)
-    wdt_timer.init(period=4000, mode=machine.Timer.PERIODIC, callback=lambda t: wdt.feed())
-    print("WDT Initialized.")
-except Exception as e:
-    print("WDT Init Warning:", e)
+class SafeTime:
+    """Safe time wrapper that keeps the OS fully alive during user sleeps."""
+    @staticmethod
+    def sleep(s):
+        ten.delay(int(s * 1000))
+
+    @staticmethod
+    def sleep_ms(ms):
+        ten.delay(int(ms))
+
+    @staticmethod
+    def sleep_us(us):
+        time.sleep_us(us)
+
+    @staticmethod
+    def ticks_ms():
+        return time.ticks_ms()
+
+    @staticmethod
+    def ticks_us():
+        return time.ticks_us()
+
+    @staticmethod
+    def ticks_diff(t1, t2):
+        return time.ticks_diff(t1, t2)
+
+    @staticmethod
+    def ticks_add(t, d):
+        return time.ticks_add(t, d)
+
+    @staticmethod
+    def time():
+        return time.time()
+
+    @staticmethod
+    def localtime(*args):
+        return time.localtime(*args)
+
+# SafeTime module alias
+sys.modules['time'] = SafeTime
+sys.modules['ten'] = ten
 
 def main():
-    print("Starting Main Sequence (FS PRIORITY)...")
-
-    import gc
-    print(f"Memory Free: {gc.mem_free()} bytes")
-    if 'wdt' in globals(): wdt.feed()
+    print("Starting Supervised Main Sequence (TEN Robotics ESP32 DevKit V1)...")
 
     try:
-        if 'wdt' in globals(): wdt.feed()
-        print("Initializing Store Manager...")
         store_manager.start()
-        if 'wdt' in globals(): wdt.feed()
-        print("Store Manager Ready")
+        print("Store Manager & Multi-Transport Engine Ready.")
     except Exception as e:
         print("Store Manager init failed:")
         sys.print_exception(e)
 
-    # -- Main Loop -------------------------------------------------------------
-    print("Entering Main Loop...")
     loop_count = 0
-    
     while True:
         try:
-            if 'wdt' in globals(): wdt.feed()
             loop_count += 1
             mgr = store_manager.manager
-            
+
             if mgr:
                 mgr.poll_serial()
-                mgr.poll_ble()
-            
+                mgr.poll_buttons()
+                mgr.poll_power_telemetry()
+                mgr.poll_ui()
+
             if hasattr(mgr, 'pending_start') and mgr.pending_start:
                 mgr.pending_start = False
                 mgr.start_prog()
-                
-            if loop_count % 10 == 0:
+
+            if loop_count % 20 == 0:
                 gc.collect()
 
-            if mgr:
-                status = mgr.prog_status
-                if status == "RUNNING":
-                    import sh1106
-                    gc.collect()
-                    
-                    try:
-                        fsize = os.stat("app.py")[6]
-                    except:
-                        fsize = 0
-                    if fsize > 0:
-                        time.sleep_ms(100)
-                        current_session = mgr.exec_start_ticks
-                        
-                        if mgr.prog_status != "RUNNING":
-                            continue
-                        
-                        if mgr.display:
-                            try:
-                                mgr.display.fill(0)
-                                mgr.display.show()
-                            except: pass
-                            
-                        def check_abort():
-                            if mgr.prog_status != "RUNNING" or mgr.exec_start_ticks != current_session:
-                                raise SystemExit("STOPPED_BY_USER")
-                                
-                        exec_globals = {
-                            "__name__": "__main__",
-                            "machine": machine, "time": time, "os": os, "gc": gc,
-                            "i2c": mgr.i2c, "oled": mgr.display,
-                            "display": mgr.display,
-                            "check_abort": check_abort
-                        }
-                        
-                        try:
-                            print(f"--- EXEC START (Session {current_session}) ---")
-                            mgr._in_exec = True
-                            with open("app.py", "r") as f:
-                                code_str = f.read()
-                            gc.collect() 
-                            import ten
-                            ten.start()
-                            exec(code_str, exec_globals)
-                            mgr._in_exec = False
-                            print(f"--- EXEC DONE (Session {current_session}) ---")
-                            if mgr.prog_status == "RUNNING" and mgr.exec_start_ticks == current_session:
-                                mgr.stop_prog()
-                        except KeyboardInterrupt:
-                            mgr._in_exec = False
-                            print(f"--- EXEC INTERRUPT (Session {current_session}) ---")
-                            if mgr.exec_start_ticks == current_session:
-                                mgr.stop_prog()
-                        except BaseException as e:
-                            mgr._in_exec = False
-                            print(f"--- EXEC ERROR (Session {current_session}) ---")
-                            sys.print_exception(e)
-                            if mgr.exec_start_ticks == current_session:
-                                mgr.stop_prog(e)
-                        finally:
-                            try:
-                                import ten
-                                ten.stop_all()
-                            except: pass
-                            exec_globals.clear()
-                            gc.collect()
-                    
-                    time.sleep(0.1)
+            # Supervised Program Execution
+            if mgr and mgr.prog_status == "RUNNING" and not mgr.is_uploading:
+                try:
+                    fsize = os.stat("app.py")[6]
+                except Exception:
+                    fsize = 0
+
+                if fsize <= 0:
+                    print("MAIN: No program found (app.py empty) - halting execution.")
+                    mgr.stop_prog("NO SCRIPT")
                 else:
-                    time.sleep_ms(50)
+                    session_id = mgr.exec_start_ticks
+                    mgr._in_exec = True
+
+                    def check_abort():
+                        if not mgr or mgr.prog_status != "RUNNING" or mgr.exec_start_ticks != session_id or mgr.is_uploading:
+                            raise KeyboardInterrupt("STOPPED_BY_USER")
+
+                    def custom_print(*args, **kwargs):
+                        sep = kwargs.get("sep", " ")
+                        end = kwargs.get("end", "\n")
+                        text = sep.join(str(a) for a in args) + end
+                        if mgr:
+                            mgr.write_out(text)
+                        else:
+                            sys.stdout.write(text)
+
+                    def broadcast(val):
+                        if mgr:
+                            mgr.write_out(f"SENSOR:{val}\n")
+                        else:
+                            sys.stdout.write(f"SENSOR:{val}\n")
+
+                    exec_globals = {
+                        "__name__": "__main__",
+                        "machine": machine,
+                        "time": SafeTime,
+                        "os": os,
+                        "gc": gc,
+                        "display": mgr.display if mgr else None,
+                        "buzzer": buzzer,
+                        "ten": ten,
+                        "print": custom_print,
+                        "broadcast": broadcast,
+                        "check_abort": check_abort
+                    }
+
+                    try:
+                        print(f"--- EXEC START (Session {session_id}) ---")
+                        with open("app.py", "r") as f:
+                            code_str = f.read()
+
+                        gc.collect()
+                        ten.start()
+                        exec(code_str, exec_globals)
+                        print(f"--- EXEC COMPLETED (Session {session_id}) ---")
+                        if mgr and mgr.prog_status == "RUNNING":
+                            mgr.stop_prog()
+                    except KeyboardInterrupt:
+                        print(f"--- EXEC HALTED (Session {session_id}) ---")
+                        if mgr:
+                            mgr.stop_prog()
+                    except BaseException as e:
+                        print(f"--- EXEC ERROR (Session {session_id}) ---")
+                        sys.print_exception(e)
+                        buzzer.play_error()
+                        if mgr:
+                            mgr.write_out(f"ERR:{str(e)}\n")
+                            mgr.write_out("STATUS:STOPPED\n")
+                            if mgr.display and not mgr.is_uploading:
+                                try:
+                                    d = mgr.display
+                                    d.fill(0)
+                                    d.fill_rect(0, 0, 128, 12, 1)
+                                    d.text("SYSTEM ERROR", 16, 2, 0)
+                                    err_name = type(e).__name__[:14]
+                                    err_msg = str(e)[:14]
+                                    d.text(err_name, 8, 26, 1)
+                                    d.text(err_msg, 8, 44, 1)
+                                    d.show()
+                                except Exception:
+                                    pass
+                            mgr.stop_prog(e)
+                    finally:
+                        exec_globals.clear()
+                        ten.stop_all()
+                        if mgr:
+                            mgr._in_exec = False
+                        gc.collect()
+
+                time.sleep_ms(50)
+            else:
+                time.sleep_ms(20)
 
         except KeyboardInterrupt:
             break
         except Exception as e:
-            print("Main loop system error:")
+            print("Main supervisor caught top-level exception (OS STABLE):")
             sys.print_exception(e)
-            time.sleep(0.5)
+            time.sleep_ms(200)
 
 if __name__ == "__main__":
     main()

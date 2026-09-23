@@ -38,6 +38,7 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
 
     const setModuleBlocks = useAppStore(s => s.setModuleBlocks);
     const moduleBlocks = useAppStore(s => s.moduleBlocks);
+    const telemetry = useAppStore(s => s.telemetry);
 
     React.useEffect(() => {
         // Check if there are temporary module blocks to load
@@ -70,7 +71,24 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
 
     const handleRun = async () => {
         if (!isConnected) { toast.error('Connect your ESP32 first!'); return; }
-        await connectionManager.runCode();
+        setSidebarTab('monitor');
+        if (pythonCode && pythonCode.trim()) {
+            setIsUploading(true);
+            try {
+                if (onUpload) {
+                    await onUpload(pythonCode);
+                } else {
+                    await connectionManager.uploadCode(pythonCode);
+                }
+                await connectionManager.runCode();
+            } catch (err) {
+                toast.error('Run failed: ' + err.message);
+            } finally {
+                setIsUploading(false);
+            }
+        } else {
+            await connectionManager.runCode();
+        }
     };
 
     const handleStop = async () => {
@@ -86,6 +104,7 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
             return;
         }
 
+        setSidebarTab('monitor');
         if (onUpload) {
             onUpload(codeToUpload);
         } else {
@@ -303,16 +322,35 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
                             ) : (
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                     {/* Telemetry Display */}
-                                    <div style={{ padding: '15px', background: 'white', borderBottom: '1px solid #ddd' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.75rem', fontWeight: 'bold', color: '#0088cc' }}>
+                                    <div style={{ padding: '12px 15px', background: 'white', borderBottom: '1px solid #ddd' }}>
+                                        {/* Power Telemetry Bar */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                            <span style={{ color: '#e67e22', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                BATTERY (2S): {telemetry?.v ? `${Number(telemetry.v).toFixed(2)}V` : '--'}
+                                            </span>
+                                            <span style={{ color: (telemetry?.pct ?? 0) > 20 ? '#27ae60' : '#e74c3c' }}>
+                                                {telemetry?.pct !== undefined ? `${telemetry.pct}%` : '--'} | {telemetry?.ma !== undefined ? `${telemetry.ma}mA` : '--'}
+                                            </span>
+                                        </div>
+                                        <div style={{ height: '8px', background: '#eee', borderRadius: '4px', overflow: 'hidden', marginBottom: '10px' }}>
+                                            <div style={{
+                                                height: '100%',
+                                                width: `${Math.max(2, Math.min(100, telemetry?.pct ?? 0))}%`,
+                                                background: (telemetry?.pct ?? 0) > 20 ? '#2ecc71' : '#e74c3c',
+                                                transition: 'width 0.3s ease'
+                                            }} />
+                                        </div>
+
+                                        {/* Robot Sensors Bar */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.75rem', fontWeight: 'bold', color: '#0088cc' }}>
                                             <span>ROBOT SENSORS</span>
                                             <span>{sensorValue}%</span>
                                         </div>
-                                        <div style={{ height: '12px', background: '#eee', borderRadius: '6px', overflow: 'hidden' }}>
+                                        <div style={{ height: '8px', background: '#eee', borderRadius: '4px', overflow: 'hidden' }}>
                                             <div style={{
                                                 height: '100%',
                                                 width: `${sensorValue}%`,
-                                                background: '#2ecc71',
+                                                background: '#0088cc',
                                                 transition: 'width 0.2s'
                                             }} />
                                         </div>
