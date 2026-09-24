@@ -159,17 +159,15 @@ const ProjectStore = ({ onSelectProject, onOpenDetails }) => {
             <AnimatePresence mode="popLayout">
                 {filteredProjects.length > 0 ? (
                     <Motion.div
-                        layout
                         className="store-grid"
                     >
                         {filteredProjects.map((project, index) => (
                             <Motion.div
-                                layout
                                 key={project.id}
-                                initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
-                                animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, rotateY: 10 }}
-                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                                initial={{ opacity: 0, scale: 0.96 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.96 }}
+                                transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.12) }}
                                 className="glass tilt-effect store-card"
                                 onClick={() => onOpenDetails(project)}
                             >

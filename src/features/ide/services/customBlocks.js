@@ -1,7 +1,11 @@
 import * as Blockly from 'blockly';
 import { pythonGenerator } from 'blockly/python';
 
+// Enforce standard 4-space indentation for Python code generation
+pythonGenerator.INDENT = '    ';
+
 export const defineCustomBlocks = () => {
+    pythonGenerator.INDENT = '    ';
     // --- SERVO: Set Angle (180° positional) ---
     Blockly.Blocks['esp32_servo'] = {
         init: function () {
@@ -1513,28 +1517,73 @@ robot_eyes = _RobotEyes()
 
     // --- BUILT-IN OVERRIDES ---
     // Loops blocks to Green (#59C059)
-    if (Blockly.Blocks['controls_repeat_ext']) {
-        const oldInit = Blockly.Blocks['controls_repeat_ext'].init;
-        Blockly.Blocks['controls_repeat_ext'].init = function() {
-            oldInit.call(this);
-            this.setColour('#59C059');
-        };
-    }
-    if (Blockly.Blocks['controls_whileUntil']) {
-        const oldInit = Blockly.Blocks['controls_whileUntil'].init;
-        Blockly.Blocks['controls_whileUntil'].init = function() {
-            oldInit.call(this);
-            this.setColour('#59C059');
-        };
-    }
-    // If block and Logic blocks to Blue (#4C97FF)
-    const blueBlocks = ['controls_if', 'logic_compare', 'logic_operation', 'logic_negate', 'logic_boolean'];
+    const loopBlocks = ['controls_repeat_ext', 'controls_whileUntil', 'controls_for', 'controls_forEach', 'controls_flow_statements'];
+    loopBlocks.forEach(type => {
+        if (Blockly.Blocks[type]) {
+            const oldInit = Blockly.Blocks[type].init;
+            Blockly.Blocks[type].init = function() {
+                oldInit.call(this);
+                this.setColour('#59C059');
+            };
+        }
+    });
+
+    // Control & Logic blocks to Blue (#4C97FF)
+    const blueBlocks = ['controls_if', 'controls_ifelse', 'logic_compare', 'logic_operation', 'logic_negate', 'logic_boolean', 'logic_null', 'logic_ternary'];
     blueBlocks.forEach(type => {
         if (Blockly.Blocks[type]) {
             const oldInit = Blockly.Blocks[type].init;
             Blockly.Blocks[type].init = function() {
                 oldInit.call(this);
                 this.setColour('#4C97FF');
+            };
+        }
+    });
+
+    // Math blocks to Green (#59C059)
+    const mathBlocks = ['math_number', 'math_arithmetic', 'math_single', 'math_trig', 'math_constant', 'math_number_property', 'math_change', 'math_round', 'math_on_list', 'math_modulo', 'math_constrain', 'math_random_int', 'math_random_float', 'math_atan2'];
+    mathBlocks.forEach(type => {
+        if (Blockly.Blocks[type]) {
+            const oldInit = Blockly.Blocks[type].init;
+            Blockly.Blocks[type].init = function() {
+                oldInit.call(this);
+                this.setColour('#59C059');
+            };
+        }
+    });
+
+    // Text blocks to Purple (#9333EA)
+    const textBlocks = ['text', 'text_join', 'text_append', 'text_length', 'text_isEmpty', 'text_indexOf', 'text_charAt', 'text_getSubstring', 'text_changeCase', 'text_trim', 'text_print', 'text_count', 'text_replace', 'text_reverse'];
+    textBlocks.forEach(type => {
+        if (Blockly.Blocks[type]) {
+            const oldInit = Blockly.Blocks[type].init;
+            Blockly.Blocks[type].init = function() {
+                oldInit.call(this);
+                this.setColour('#9333EA');
+            };
+        }
+    });
+
+    // Lists blocks to Orange (#EA580C)
+    const listBlocks = ['lists_create_with', 'lists_create_empty', 'lists_repeat', 'lists_length', 'lists_isEmpty', 'lists_indexOf', 'lists_getIndex', 'lists_setIndex', 'lists_getSublist', 'lists_split', 'lists_sort', 'lists_reverse'];
+    listBlocks.forEach(type => {
+        if (Blockly.Blocks[type]) {
+            const oldInit = Blockly.Blocks[type].init;
+            Blockly.Blocks[type].init = function() {
+                oldInit.call(this);
+                this.setColour('#EA580C');
+            };
+        }
+    });
+
+    // Procedures / Functions blocks to Purple (#A855F7)
+    const procBlocks = ['procedures_defnoreturn', 'procedures_defreturn', 'procedures_ifreturn', 'procedures_callnoreturn', 'procedures_callreturn'];
+    procBlocks.forEach(type => {
+        if (Blockly.Blocks[type]) {
+            const oldInit = Blockly.Blocks[type].init;
+            Blockly.Blocks[type].init = function() {
+                oldInit.call(this);
+                this.setColour('#A855F7');
             };
         }
     });
@@ -1553,7 +1602,6 @@ robot_eyes = _RobotEyes()
         } else if (!branch.includes('ten.delay') && !branch.includes('time.sleep')) {
             branch = branch + '    ten.delay(2)\n';
         }
-        // Injected ten.is_running() to allow the firmware to break the loop
         return `while ${condition} and ten.is_running():\n${branch}`;
     };
 
@@ -1571,9 +1619,77 @@ robot_eyes = _RobotEyes()
         } else if (!branch.includes('ten.delay') && !branch.includes('time.sleep')) {
             branch = branch + '    ten.delay(2)\n';
         }
-        const loopVar = pythonGenerator.nameDB_.getDistinctName('count', Blockly.utils.NameType.VARIABLE);
-        // Inject is_running check inside for loops to allow breaking mid-run
+        const varType = Blockly.Names?.NameType?.VARIABLE || 'VARIABLE';
+        const loopVar = pythonGenerator.nameDB_ ? pythonGenerator.nameDB_.getDistinctName('count', varType) : 'count';
         return `for ${loopVar} in range(${repeats}):\n    if not ten.is_running(): break\n${branch}`;
+    };
+
+    pythonGenerator.forBlock['controls_for'] = function (block) {
+        const varType = Blockly.Names?.NameType?.VARIABLE || 'VARIABLE';
+        const varField = block.getFieldValue('VAR');
+        const variable = pythonGenerator.nameDB_ ? pythonGenerator.nameDB_.getName(varField, varType) : (varField || 'i');
+        const from = pythonGenerator.valueToCode(block, 'FROM', pythonGenerator.ORDER_NONE) || '0';
+        const to = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_NONE) || '0';
+        const step = pythonGenerator.valueToCode(block, 'BY', pythonGenerator.ORDER_NONE) || '1';
+        let branch = pythonGenerator.statementToCode(block, 'DO');
+        if (!branch || branch.trim() === '') {
+            branch = '    ten.delay(10)\n';
+        } else if (!branch.includes('ten.delay') && !branch.includes('time.sleep')) {
+            branch = branch + '    ten.delay(2)\n';
+        }
+        return `for ${variable} in range(int(${from}), int(${to}) + 1, int(${step})):\n    if not ten.is_running(): break\n${branch}`;
+    };
+
+    pythonGenerator.forBlock['controls_forEach'] = function (block) {
+        const varType = Blockly.Names?.NameType?.VARIABLE || 'VARIABLE';
+        const varField = block.getFieldValue('VAR');
+        const variable = pythonGenerator.nameDB_ ? pythonGenerator.nameDB_.getName(varField, varType) : (varField || 'item');
+        const list = pythonGenerator.valueToCode(block, 'LIST', pythonGenerator.ORDER_RELATIONAL) || '[]';
+        let branch = pythonGenerator.statementToCode(block, 'DO');
+        if (!branch || branch.trim() === '') {
+            branch = '    ten.delay(10)\n';
+        } else if (!branch.includes('ten.delay') && !branch.includes('time.sleep')) {
+            branch = branch + '    ten.delay(2)\n';
+        }
+        return `for ${variable} in ${list}:\n    if not ten.is_running(): break\n${branch}`;
+    };
+
+    // --- ESP32 / ARDUINO MAP RANGE BLOCK ---
+    Blockly.Blocks['esp32_map'] = {
+        init: function () {
+            this.appendValueInput("VAL")
+                .setCheck("Number")
+                .appendField("Map");
+            this.appendValueInput("FROM_LOW")
+                .setCheck("Number")
+                .appendField("from");
+            this.appendValueInput("FROM_HIGH")
+                .setCheck("Number")
+                .appendField("..");
+            this.appendValueInput("TO_LOW")
+                .setCheck("Number")
+                .appendField("to");
+            this.appendValueInput("TO_HIGH")
+                .setCheck("Number")
+                .appendField("..");
+            this.setInputsInline(true);
+            this.setOutput(true, "Number");
+            this.setColour('#59C059');
+            this.setTooltip("Map a number from one range to another range (e.g. 0-4095 to 0-100)");
+        }
+    };
+
+    pythonGenerator.forBlock['esp32_map'] = function (block) {
+        const val = pythonGenerator.valueToCode(block, 'VAL', pythonGenerator.ORDER_NONE) || '0';
+        const fl = pythonGenerator.valueToCode(block, 'FROM_LOW', pythonGenerator.ORDER_NONE) || '0';
+        const fh = pythonGenerator.valueToCode(block, 'FROM_HIGH', pythonGenerator.ORDER_NONE) || '4095';
+        const tl = pythonGenerator.valueToCode(block, 'TO_LOW', pythonGenerator.ORDER_NONE) || '0';
+        const th = pythonGenerator.valueToCode(block, 'TO_HIGH', pythonGenerator.ORDER_NONE) || '100';
+        pythonGenerator.definitions_['helper_map_range'] = 
+            `def _map_range(x, in_min, in_max, out_min, out_max):\n` +
+            `    if in_max == in_min: return out_min\n` +
+            `    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min\n`;
+        return [`_map_range(${val}, ${fl}, ${fh}, ${tl}, ${th})`, pythonGenerator.ORDER_FUNCTION_CALL];
     };
 
 

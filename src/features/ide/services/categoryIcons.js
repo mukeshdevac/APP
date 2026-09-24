@@ -141,6 +141,25 @@ export const CATEGORY_ICONS = {
         <path d="M 22 4 L 26 4 L 26 24 L 22 24" fill="none" stroke="#EF4444" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M 7 9 L 12 15 M 12 9 L 7 15" stroke="#EF4444" stroke-width="2" stroke-linecap="round"/>
         <path d="M 15 13 L 17.5 17 L 20 13 M 17.5 17 L 16 21" stroke="#EF4444" stroke-width="2" stroke-linecap="round"/>
+    </svg>`,
+
+    'LISTS': `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3.5" y="4" width="21" height="5.5" rx="2" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.8"/>
+        <rect x="3.5" y="11.25" width="21" height="5.5" rx="2" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.8"/>
+        <rect x="3.5" y="18.5" width="21" height="5.5" rx="2" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.8"/>
+        <circle cx="7" cy="6.75" r="1.3" fill="#EA580C"/>
+        <circle cx="7" cy="14" r="1.3" fill="#EA580C"/>
+        <circle cx="7" cy="21.25" r="1.3" fill="#EA580C"/>
+        <line x1="11.5" y1="6.75" x2="20.5" y2="6.75" stroke="#EA580C" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="11.5" y1="14" x2="18.5" y2="14" stroke="#EA580C" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="11.5" y1="21.25" x2="16.5" y2="21.25" stroke="#EA580C" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>`,
+
+    'FUNCTIONS': `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="10" fill="#F3E8FF" stroke="#9333EA" stroke-width="2"/>
+        <path d="M 11.5 8 C 10 8, 9 9, 9 11 L 9 13 C 9 13.8, 8 14.5, 7 14.5 C 8 14.5, 9 15.2, 9 16 L 9 18 C 9 20, 10 21, 11.5 21" stroke="#7E22CE" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        <path d="M 16.5 8 C 18 8, 19 9, 19 11 L 19 13 C 19 13.8, 20 14.5, 21 14.5 C 20 14.5, 19 15.2, 19 16 L 19 18 C 19 20, 18 21, 16.5 21" stroke="#7E22CE" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        <path d="M 12 11.5 L 16 16.5 M 16 11.5 L 12 16.5" stroke="#9333EA" stroke-width="1.8" stroke-linecap="round"/>
     </svg>`
 };
 
@@ -165,23 +184,28 @@ class CustomCategory extends Blockly.ToolboxCategory {
 
     createRowContainer_() {
         const row = super.createRowContainer_();
-        row.classList.add('custom-category-row');
+        row.classList.add('custom-category-row', 'blocklyTreeRow');
         
-        // Direct inline styling to guarantee equal height, spacing, and zero overlap
         row.style.setProperty('display', 'flex', 'important');
         row.style.setProperty('flex-direction', 'row', 'important');
         row.style.setProperty('align-items', 'center', 'important');
         row.style.setProperty('justify-content', 'flex-start', 'important');
-        row.style.setProperty('height', '48px', 'important');
-        row.style.setProperty('min-height', '48px', 'important');
-        row.style.setProperty('max-height', '48px', 'important');
-        row.style.setProperty('padding', '0 16px', 'important');
-        row.style.setProperty('margin', '3px 8px', 'important');
+        row.style.setProperty('height', '36px', 'important');
+        row.style.setProperty('min-height', '36px', 'important');
+        row.style.setProperty('max-height', '36px', 'important');
+        row.style.setProperty('padding', '0 10px', 'important');
+        row.style.setProperty('margin', '2px 6px', 'important');
         row.style.setProperty('border-radius', '8px', 'important');
-        row.style.setProperty('border', 'none', 'important');
         row.style.setProperty('cursor', 'pointer', 'important');
         row.style.setProperty('box-sizing', 'border-box', 'important');
-        row.style.setProperty('transition', 'background-color 0.15s ease', 'important');
+        row.style.setProperty('transition', 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)', 'important');
+
+        row.addEventListener('mouseenter', () => {
+            row.classList.add('category-hover');
+        });
+        row.addEventListener('mouseleave', () => {
+            row.classList.remove('category-hover');
+        });
 
         return row;
     }
@@ -230,14 +254,11 @@ class CustomCategory extends Blockly.ToolboxCategory {
     }
 
     setSelected(isSelected) {
-        // Soft pill highlight without obscuring the vibrant icon
         if (this.rowDiv_) {
             if (isSelected) {
-                this.rowDiv_.classList.add('blocklyTreeSelected', 'category-selected');
-                this.rowDiv_.style.setProperty('background-color', 'rgba(0, 0, 0, 0.06)', 'important');
+                this.rowDiv_.classList.add('blocklyTreeSelected', 'category-selected', 'blocklyToolboxSelected');
             } else {
-                this.rowDiv_.classList.remove('blocklyTreeSelected', 'category-selected');
-                this.rowDiv_.style.setProperty('background-color', 'transparent', 'important');
+                this.rowDiv_.classList.remove('blocklyTreeSelected', 'category-selected', 'blocklyToolboxSelected');
             }
             if (this.htmlDiv_) {
                 Blockly.utils.aria.setState(
@@ -250,10 +271,7 @@ class CustomCategory extends Blockly.ToolboxCategory {
     }
 
     addColourBorder_() {
-        if (this.rowDiv_) {
-            this.rowDiv_.style.setProperty('border-left', 'none', 'important');
-            this.rowDiv_.style.setProperty('border-right', 'none', 'important');
-        }
+        // Allow CSS hover and selected border-left to control the styling
     }
 }
 

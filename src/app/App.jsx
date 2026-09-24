@@ -16,12 +16,11 @@ const IDE            = React.lazy(() => import('../features/ide/components/IDE')
 const AIAgent        = React.lazy(() => import('../features/ai-agent/components/AIAgent'));
 const SerialTerminal = React.lazy(() => import('../components/common/SerialTerminal'));
 
-// ---  Page transition config ---
+// --- Smooth, flicker-free page transition config ---
 const pageVariants = {
-  store:   { initial: { opacity: 0, rotateY: -45, z: -300, scale: 0.9 }, animate: { opacity: 1, rotateY: 0, z: 0, scale: 1 }, exit: { opacity: 0, rotateY: 45, z: -300, scale: 0.9 } },
-  details: { initial: { opacity: 0, scale: 0.8, z: -200, rotateX: 20 }, animate: { opacity: 1, scale: 1, z: 0, rotateX: 0 }, exit: { opacity: 0, scale: 0.8, z: -200, rotateX: -20 } },
-  ide:     { initial: { opacity: 0, rotateX: 45, z: -300, scale: 0.9 }, animate: { opacity: 1, rotateX: 0, z: 0, scale: 1 }, exit: { opacity: 0, rotateX: -45, z: -300, scale: 0.9 } },
-  ai:      { initial: { opacity: 0, x: 100, rotateY: -30 }, animate: { opacity: 1, x: 0, rotateY: 0 }, exit: { opacity: 0, x: -100, rotateY: 30 } },
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
 };
 
 function App() {
@@ -125,26 +124,18 @@ function App() {
     }
   }, [isConnected, setUploadProgress]);
 
-  const tv = pageVariants[view] || pageVariants.store;
-
-  // Lock viewport overflow and height when in IDE view to guarantee exact screen ratio fit
+  // Lock viewport overflow when in IDE view to guarantee exact screen ratio fit
   useEffect(() => {
     if (view === 'ide') {
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
-      document.body.style.height = '100vh';
-      document.documentElement.style.height = '100vh';
     } else {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
-      document.body.style.height = '';
-      document.documentElement.style.height = '';
     }
     return () => {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
-      document.body.style.height = '';
-      document.documentElement.style.height = '';
     };
   }, [view]);
 
@@ -164,27 +155,35 @@ function App() {
               flexDirection: 'column',
               background: 'var(--background)',
               color: 'var(--text)',
-              perspective: 'var(--perspective)',
-              transformStyle: 'preserve-3d',
               overflow: view === 'ide' ? 'hidden' : 'visible'
             }}
           >
-            {view !== 'ide' && (
-              <Header
-                isConnected={isConnected}
-                setIsConnected={setConnected}
-                onHome={handleBackToStore}
-                view={view}
-                setView={setView}
-                onUpload={handleCodeUpload}
-                uploadProgress={uploadProgress}
-                onOpenIde={handleOpenIde}
-                telemetry={telemetry}
-              />
-            )}
+            <AnimatePresence>
+              {view !== 'ide' && (
+                <Motion.div
+                  key="app-header-bar"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.18 }}
+                  style={{ width: '100%', zIndex: 100 }}
+                >
+                  <Header
+                    isConnected={isConnected}
+                    setIsConnected={setConnected}
+                    onHome={handleBackToStore}
+                    view={view}
+                    setView={setView}
+                    onUpload={handleCodeUpload}
+                    uploadProgress={uploadProgress}
+                    onOpenIde={handleOpenIde}
+                    telemetry={telemetry}
+                  />
+                </Motion.div>
+              )}
+            </AnimatePresence>
 
             <main
-              className="preserve-3d"
               style={{
                 flex: 1,
                 display: 'flex',
@@ -199,13 +198,12 @@ function App() {
               <AnimatePresence mode="wait">
                 <Motion.div
                   key={view}
-                  initial={tv.initial}
-                  animate={tv.animate}
-                  exit={tv.exit}
-                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  initial={pageVariants.initial}
+                  animate={pageVariants.animate}
+                  exit={pageVariants.exit}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   className={view === 'ai' ? 'ai-view-wrapper' : ''}
                   style={{
-                    transformStyle: 'preserve-3d',
                     height: view === 'ide' ? '100%' : 'auto',
                     maxHeight: view === 'ide' ? '100%' : 'none',
                     minHeight: 0,

@@ -155,6 +155,17 @@ export const useBlockly = (project) => {
                         contents: [
                             { kind: 'block', type: 'controls_repeat_ext', inputs: { TIMES: { shadow: { type: 'math_number', fields: { NUM: 10 } } } } },
                             { kind: 'block', type: 'controls_whileUntil' },
+                            {
+                                kind: 'block',
+                                type: 'controls_for',
+                                inputs: {
+                                    FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                                    TO: { shadow: { type: 'math_number', fields: { NUM: 10 } } },
+                                    BY: { shadow: { type: 'math_number', fields: { NUM: 1 } } }
+                                }
+                            },
+                            { kind: 'block', type: 'controls_forEach' },
+                            { kind: 'block', type: 'controls_flow_statements' },
                         ],
                     },
                     {
@@ -163,11 +174,14 @@ export const useBlockly = (project) => {
                         colour: '#4C97FF',
                         contents: [
                             { kind: 'block', type: 'controls_if' },
+                            { kind: 'block', type: 'controls_ifelse' },
                             { kind: 'block', type: 'logic_compare' },
                             { kind: 'block', type: 'ten_number_100', fields: { NUM: 50 } },
                             { kind: 'block', type: 'logic_operation' },
                             { kind: 'block', type: 'logic_negate' },
                             { kind: 'block', type: 'logic_boolean' },
+                            { kind: 'block', type: 'logic_null' },
+                            { kind: 'block', type: 'logic_ternary' },
                         ],
                     },
                     {
@@ -176,14 +190,89 @@ export const useBlockly = (project) => {
                         colour: '#59C059',
                         contents: [
                             { kind: 'block', type: 'math_number' },
-                            { kind: 'block', type: 'math_arithmetic' },
-                            { kind: 'block', type: 'math_single' },
-                            { kind: 'block', type: 'math_trig' },
+                            {
+                                kind: 'block',
+                                type: 'math_arithmetic',
+                                inputs: {
+                                    A: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                                    B: { shadow: { type: 'math_number', fields: { NUM: 1 } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'math_single',
+                                inputs: {
+                                    NUM: { shadow: { type: 'math_number', fields: { NUM: 9 } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'math_trig',
+                                inputs: {
+                                    NUM: { shadow: { type: 'math_number', fields: { NUM: 45 } } }
+                                }
+                            },
                             { kind: 'block', type: 'math_constant' },
-                            { kind: 'block', type: 'math_round' },
-                            { kind: 'block', type: 'math_modulo' },
-                            { kind: 'block', type: 'math_random_int', inputs: { FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } }, TO: { shadow: { type: 'math_number', fields: { NUM: 100 } } } } },
+                            {
+                                kind: 'block',
+                                type: 'math_number_property',
+                                inputs: {
+                                    NUMBER_TO_CHECK: { shadow: { type: 'math_number', fields: { NUM: 0 } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'math_round',
+                                inputs: {
+                                    NUM: { shadow: { type: 'math_number', fields: { NUM: 3.1 } } }
+                                }
+                            },
+                            { kind: 'block', type: 'math_on_list' },
+                            {
+                                kind: 'block',
+                                type: 'math_modulo',
+                                inputs: {
+                                    DIVIDEND: { shadow: { type: 'math_number', fields: { NUM: 64 } } },
+                                    DIVISOR: { shadow: { type: 'math_number', fields: { NUM: 10 } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'math_constrain',
+                                inputs: {
+                                    VALUE: { shadow: { type: 'math_number', fields: { NUM: 50 } } },
+                                    LOW: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                                    HIGH: { shadow: { type: 'math_number', fields: { NUM: 100 } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'esp32_map',
+                                inputs: {
+                                    VAL: { shadow: { type: 'math_number', fields: { NUM: 512 } } },
+                                    FROM_LOW: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                                    FROM_HIGH: { shadow: { type: 'math_number', fields: { NUM: 1023 } } },
+                                    TO_LOW: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                                    TO_HIGH: { shadow: { type: 'math_number', fields: { NUM: 180 } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'math_random_int',
+                                inputs: {
+                                    FROM: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                                    TO: { shadow: { type: 'math_number', fields: { NUM: 100 } } }
+                                }
+                            },
                             { kind: 'block', type: 'math_random_float' },
+                            {
+                                kind: 'block',
+                                type: 'math_atan2',
+                                inputs: {
+                                    X: { shadow: { type: 'math_number', fields: { NUM: 1 } } },
+                                    Y: { shadow: { type: 'math_number', fields: { NUM: 1 } } }
+                                }
+                            },
                         ],
                     },
                     {
@@ -193,7 +282,101 @@ export const useBlockly = (project) => {
                         contents: [
                             { kind: 'block', type: 'text' },
                             { kind: 'block', type: 'text_join' },
-                            { kind: 'block', type: 'text_length' },
+                            {
+                                kind: 'block',
+                                type: 'text_append',
+                                inputs: {
+                                    TEXT: { shadow: { type: 'text', fields: { TEXT: '' } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'text_length',
+                                inputs: {
+                                    VALUE: { shadow: { type: 'text', fields: { TEXT: 'abc' } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'text_isEmpty',
+                                inputs: {
+                                    VALUE: { shadow: { type: 'text', fields: { TEXT: '' } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'text_indexOf',
+                                inputs: {
+                                    VALUE: { block: { type: 'variables_get' } },
+                                    FIND: { shadow: { type: 'text', fields: { TEXT: 'abc' } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'text_charAt',
+                                inputs: {
+                                    VALUE: { block: { type: 'variables_get' } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'text_getSubstring',
+                                inputs: {
+                                    STRING: { block: { type: 'variables_get' } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'text_changeCase',
+                                inputs: {
+                                    TEXT: { shadow: { type: 'text', fields: { TEXT: 'abc' } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'text_trim',
+                                inputs: {
+                                    TEXT: { shadow: { type: 'text', fields: { TEXT: 'abc' } } }
+                                }
+                            },
+                            {
+                                kind: 'block',
+                                type: 'text_print',
+                                inputs: {
+                                    TEXT: { shadow: { type: 'text', fields: { TEXT: 'abc' } } }
+                                }
+                            },
+                        ]
+                    },
+                    {
+                        kind: 'category',
+                        name: 'LISTS',
+                        colour: '#EA580C',
+                        contents: [
+                            { kind: 'block', type: 'lists_create_with' },
+                            { kind: 'block', type: 'lists_create_empty' },
+                            {
+                                kind: 'block',
+                                type: 'lists_repeat',
+                                inputs: {
+                                    NUM: { shadow: { type: 'math_number', fields: { NUM: 5 } } }
+                                }
+                            },
+                            { kind: 'block', type: 'lists_length' },
+                            { kind: 'block', type: 'lists_isEmpty' },
+                            { kind: 'block', type: 'lists_indexOf' },
+                            { kind: 'block', type: 'lists_getIndex' },
+                            { kind: 'block', type: 'lists_setIndex' },
+                            { kind: 'block', type: 'lists_getSublist' },
+                            {
+                                kind: 'block',
+                                type: 'lists_split',
+                                inputs: {
+                                    DELIM: { shadow: { type: 'text', fields: { TEXT: ',' } } }
+                                }
+                            },
+                            { kind: 'block', type: 'lists_sort' },
+                            { kind: 'block', type: 'lists_reverse' },
                         ]
                     },
                     {
@@ -201,6 +384,12 @@ export const useBlockly = (project) => {
                         name: 'VARIABLES',
                         colour: '#FF6680',
                         custom: 'VARIABLE'
+                    },
+                    {
+                        kind: 'category',
+                        name: 'FUNCTIONS',
+                        colour: '#A855F7',
+                        custom: 'PROCEDURE'
                     },
                 ],
             },
@@ -213,7 +402,10 @@ export const useBlockly = (project) => {
                     'sensor_blocks': { 'colourPrimary': '#4CBFE6', 'colourSecondary': '#2E8EB8', 'colourTertiary': '#2E8EB8' },
                     'sound_blocks': { 'colourPrimary': '#D65CD6', 'colourSecondary': '#BD42BD', 'colourTertiary': '#BD42BD' },
                     'math_blocks': { 'colourPrimary': '#59C059', 'colourSecondary': '#389438', 'colourTertiary': '#389438' },
+                    'text_blocks': { 'colourPrimary': '#9333EA', 'colourSecondary': '#7E22CE', 'colourTertiary': '#7E22CE' },
+                    'list_blocks': { 'colourPrimary': '#EA580C', 'colourSecondary': '#C2410C', 'colourTertiary': '#C2410C' },
                     'variable_blocks': { 'colourPrimary': '#FF6680', 'colourSecondary': '#FF3355', 'colourTertiary': '#FF3355' },
+                    'procedure_blocks': { 'colourPrimary': '#A855F7', 'colourSecondary': '#9333EA', 'colourTertiary': '#9333EA' },
                 },
                 'categoryStyles': {
                     'motion_category': { 'colour': '#4C97FF' },
@@ -222,10 +414,13 @@ export const useBlockly = (project) => {
                     'sensors_category': { 'colour': '#4CBFE6' },
                     'sound_category': { 'colour': '#D65CD6' },
                     'math_category': { 'colour': '#59C059' },
+                    'text_category': { 'colour': '#9333EA' },
+                    'lists_category': { 'colour': '#EA580C' },
                     'variable_category': { 'colour': '#FF6680' },
+                    'procedure_category': { 'colour': '#A855F7' },
                 },
                 'componentStyles': {
-                    'workspaceBackgroundColour': '#FAF9F5',
+                    'workspaceBackgroundColour': '#FFFFFF',
                     'toolboxBackgroundColour': '#FAF7F2',
                     'toolboxForegroundColour': '#18181B',
                     'flyoutBackgroundColour': '#FFFFFF',
@@ -241,7 +436,7 @@ export const useBlockly = (project) => {
                     'size': 12
                 }
             }),
-            grid: { spacing: 25, length: 3, colour: '#E5E7EB', snap: true },
+            grid: { spacing: 25, length: 3, colour: '#CBD5E1', snap: true },
             trashcan: true,
             zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
             move: { scrollbars: true, drag: true, wheel: true }
@@ -305,7 +500,8 @@ export const useBlockly = (project) => {
         const generateCode = () => {
             if (!workspace.current) return;
 
-            // 1. Initialize generator
+            // 1. Initialize generator with standard 4-space indentation
+            pythonGenerator.INDENT = '    ';
             pythonGenerator.init(workspace.current);
             
             const allTopBlocks = workspace.current.getTopBlocks(true);
@@ -345,9 +541,9 @@ export const useBlockly = (project) => {
                 code += `        ten.display.init()\n`;
             }
 
-            // Detect if the user is using their own logic flow (If, Repeat, While)
+            // Detect if the user is using their own logic flow (If, Repeat, While, For)
             const allBlocks = workspace.current.getAllBlocks(false);
-            const flowControlTypes = ['controls_repeat_ext', 'controls_whileUntil', 'robot_forever'];
+            const flowControlTypes = ['controls_repeat_ext', 'controls_whileUntil', 'controls_for', 'controls_forEach', 'robot_forever'];
             const hasFlowControl = allBlocks.some(b => flowControlTypes.includes(b.type));
 
             if (hasFlowControl) {

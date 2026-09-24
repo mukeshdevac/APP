@@ -5,7 +5,8 @@
 /* Main Toolbox Sidebar */
 .blocklyToolboxDiv {
     background-color: #FAF7F2 !important;
-    border-right: 1px solid #ECE7DD !important;
+    border-right: 1.5px solid #E5E0D8 !important;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.04) !important;
     width: 200px !important;
     min-width: 200px !important;
     max-width: 200px !important;
@@ -16,6 +17,12 @@
     box-sizing: border-box !important;
     scrollbar-width: thin !important;
     scrollbar-color: #DDD8CD transparent !important;
+    z-index: 20 !important;
+}
+
+/* Workspace Canvas Background */
+.blocklyMainBackground {
+    fill: #FFFFFF !important;
 }
 
 /* Webkit scrollbar for toolbox */
@@ -41,36 +48,114 @@
     padding: 0 !important;
 }
 
-/* Category Row - 32px height with 1px margin = 34px pitch for all 14 categories to fit any screen ratio */
-.blocklyTreeRow.custom-category-row,
-.blocklyTreeRow {
+/* Category Row - Premium interactive pill button */
+.custom-category-row,
+.blocklyToolboxCategory,
+.blocklyTreeRow,
+div[role="treeitem"] {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    height: 32px !important;
-    min-height: 32px !important;
-    max-height: 32px !important;
-    margin: 1px 6px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    margin: 2px 6px !important;
     padding: 0 10px !important;
-    border-radius: 6px !important;
-    border: none !important;
-    border-left: none !important;
-    border-right: none !important;
+    border-radius: 8px !important;
+    border: 1px solid transparent !important;
     cursor: pointer !important;
-    transition: background-color 0.15s ease !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
     box-sizing: border-box !important;
     outline: none !important;
+    position: relative !important;
+    background-color: transparent !important;
 }
 
-/* Hover and active/selected states */
-.blocklyTreeRow:hover {
-    background-color: rgba(0, 0, 0, 0.04) !important;
+/* Premium Hover State - Highlights when moving mouse over category */
+.custom-category-row:hover,
+.custom-category-row.category-hover,
+.blocklyToolboxCategory:hover,
+.blocklyToolboxCategory.category-hover,
+.blocklyTreeRow:hover,
+.blocklyTreeRow.category-hover,
+div[role="treeitem"]:hover,
+div[role="treeitem"]:hover .custom-category-row {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    border-left: 4px solid #0284C7 !important;
+    box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.12), 0 2px 5px rgba(15, 23, 42, 0.06) !important;
+    transform: translateX(4px) !important;
 }
 
+.custom-category-row:hover .custom-category-icon,
+.custom-category-row.category-hover .custom-category-icon,
+.blocklyToolboxCategory:hover .custom-category-icon,
+.blocklyToolboxCategory.category-hover .custom-category-icon,
+.blocklyTreeRow:hover .custom-category-icon,
+.blocklyTreeRow.category-hover .custom-category-icon,
+div[role="treeitem"]:hover .custom-category-icon {
+    transform: scale(1.18) !important;
+    filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 0.35)) !important;
+}
+
+.custom-category-row:hover .custom-category-label,
+.custom-category-row:hover .blocklyTreeLabel,
+.custom-category-row.category-hover .custom-category-label,
+.custom-category-row.category-hover .blocklyTreeLabel,
+.blocklyToolboxCategory:hover .custom-category-label,
+.blocklyToolboxCategory:hover .blocklyTreeLabel,
+.blocklyToolboxCategory.category-hover .custom-category-label,
+.blocklyToolboxCategory.category-hover .blocklyTreeLabel,
+.blocklyTreeRow:hover .custom-category-label,
+.blocklyTreeRow:hover .blocklyTreeLabel,
+.blocklyTreeRow.category-hover .custom-category-label,
+.blocklyTreeRow.category-hover .blocklyTreeLabel,
+div[role="treeitem"]:hover .custom-category-label,
+div[role="treeitem"]:hover .blocklyTreeLabel {
+    color: #0284C7 !important;
+    font-weight: 800 !important;
+}
+
+/* Premium Active / Selected State */
+.custom-category-row.category-selected,
+.custom-category-row.blocklyTreeSelected,
+.blocklyToolboxCategory.blocklyToolboxSelected,
 .blocklyTreeRow.blocklyTreeSelected,
-.blocklyTreeRow.category-selected {
-    background-color: rgba(0, 0, 0, 0.06) !important;
+.blocklyTreeRow.category-selected,
+div[role="treeitem"][aria-selected="true"],
+div[role="treeitem"][aria-selected="true"] .custom-category-row {
+    background-color: #FFFFFF !important;
+    border: 1px solid #BAE6FD !important;
+    border-left: 4px solid #0284C7 !important;
+    box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.2), 0 2px 5px rgba(0, 0, 0, 0.04) !important;
+    transform: translateX(4px) !important;
+}
+
+.custom-category-row.category-selected .custom-category-icon,
+.custom-category-row.blocklyTreeSelected .custom-category-icon,
+.blocklyToolboxCategory.blocklyToolboxSelected .custom-category-icon,
+.blocklyTreeRow.blocklyTreeSelected .custom-category-icon,
+.blocklyTreeRow.category-selected .custom-category-icon,
+div[role="treeitem"][aria-selected="true"] .custom-category-icon {
+    transform: scale(1.18) !important;
+    filter: drop-shadow(0 2px 8px rgba(2, 132, 199, 0.35)) !important;
+}
+
+.custom-category-row.category-selected .custom-category-label,
+.custom-category-row.category-selected .blocklyTreeLabel,
+.custom-category-row.blocklyTreeSelected .custom-category-label,
+.custom-category-row.blocklyTreeSelected .blocklyTreeLabel,
+.blocklyToolboxCategory.blocklyToolboxSelected .custom-category-label,
+.blocklyToolboxCategory.blocklyToolboxSelected .blocklyTreeLabel,
+.blocklyTreeRow.blocklyTreeSelected .custom-category-label,
+.blocklyTreeRow.blocklyTreeSelected .blocklyTreeLabel,
+.blocklyTreeRow.category-selected .custom-category-label,
+.blocklyTreeRow.category-selected .blocklyTreeLabel,
+div[role="treeitem"][aria-selected="true"] .custom-category-label,
+div[role="treeitem"][aria-selected="true"] .blocklyTreeLabel {
+    color: #0284C7 !important;
+    font-weight: 800 !important;
 }
 
 /* Category row contents - flex container for icon + label */
@@ -94,6 +179,7 @@
     height: 22px !important;
     min-width: 22px !important;
     flex-shrink: 0 !important;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), filter 0.18s ease !important;
 }
 
 .custom-category-icon svg {
@@ -115,6 +201,7 @@
     margin: 0 !important;
     padding: 0 !important;
     line-height: 1 !important;
+    transition: color 0.15s ease, font-weight 0.15s ease !important;
 }
 
 /* Math Category with Calculator */
@@ -198,4 +285,35 @@
 
 .blocklyScrollbarHandle {
     fill: #D1D5DB !important;
+}
+
+/* ==============================================================================
+   REAL BLOCKLY BLOCK PREVIEW (Curriculum Guide)
+   Renders genuine SVG Blockly blocks cleanly without toolbox/scrollbars/grid
+   ============================================================================== */
+.real-blockly-preview-host {
+    background: transparent !important;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.real-blockly-preview-host .blocklyMainBackground {
+    fill: transparent !important;
+    stroke: none !important;
+}
+
+.real-blockly-preview-host .injectionDiv {
+    background: transparent !important;
+    overflow: visible !important;
+    border: none !important;
+    outline: none !important;
+}
+
+.real-blockly-preview-host svg.blocklySvg {
+    background: transparent !important;
+    overflow: visible !important;
+}
+
+.real-blockly-preview-host .blocklyPath {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
 }
