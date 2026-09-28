@@ -149,6 +149,7 @@ def main():
                     except BaseException as e:
                         print(f"--- EXEC ERROR (Session {session_id}) ---")
                         sys.print_exception(e)
+                        ten.stop_all()
                         buzzer.play_error()
                         if mgr:
                             mgr.write_out(f"ERR:{str(e)}\n")
@@ -159,14 +160,19 @@ def main():
                                     d.fill(0)
                                     d.fill_rect(0, 0, 128, 12, 1)
                                     d.text("SYSTEM ERROR", 16, 2, 0)
-                                    err_name = type(e).__name__[:14]
-                                    err_msg = str(e)[:14]
-                                    d.text(err_name, 8, 26, 1)
-                                    d.text(err_msg, 8, 44, 1)
+                                    err_name = type(e).__name__[:15]
+                                    err_msg = str(e).strip()
+                                    d.text(err_name, 4, 18, 1)
+                                    if len(err_msg) > 15:
+                                        d.text(err_msg[:15], 4, 32, 1)
+                                        d.text(err_msg[15:30], 4, 46, 1)
+                                    elif len(err_msg) > 0:
+                                        d.text(err_msg, 4, 32, 1)
                                     d.show()
                                 except Exception:
                                     pass
-                            mgr.stop_prog(e)
+                            # Show error for 2 seconds (2000ms) on display before returning to normal
+                            mgr.stop_prog(e, hold_display_ms=2000)
                     finally:
                         exec_globals.clear()
                         ten.stop_all()

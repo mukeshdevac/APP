@@ -26,14 +26,15 @@ _MOTOR_PINS = {
     1: (hardware.M1_IN1, hardware.M1_IN2),
     2: (hardware.M2_IN1, hardware.M2_IN2),
     3: (hardware.M3_IN1, hardware.M3_IN2),
+    4: (hardware.M4_IN1, hardware.M4_IN2),
 }
 
 _OUTPUT_PINS = {
-    1: hardware.OUT1,
-    2: hardware.OUT2,
+    1: hardware.M4_IN1,
+    2: hardware.M4_IN2,
 }
 
-_SERVO_PINS  = {1: hardware.S1, 2: hardware.S2, 3: getattr(hardware, 'S3', 33)}
+_SERVO_PINS  = {1: hardware.S1, 2: hardware.S2}
 _SENSOR_PINS = {1: hardware.SN1, 2: hardware.SN2, 3: hardware.SN3, 4: hardware.SN4}
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -43,8 +44,8 @@ class Motor:
     def __init__(self, index):
         pins = _MOTOR_PINS.get(index, _MOTOR_PINS[1])
         try:
-            self._in1 = machine.PWM(machine.Pin(pins[0]), freq=1000)
-            self._in2 = machine.PWM(machine.Pin(pins[1]), freq=1000)
+            self._in1 = machine.PWM(machine.Pin(pins[0]), freq=20000)
+            self._in2 = machine.PWM(machine.Pin(pins[1]), freq=20000)
         except Exception as e:
             print(f"Motor {index} init failed: {e}")
             self._in1 = self._in2 = None
@@ -53,13 +54,15 @@ class Motor:
         if not self._in1 or not self._in2:
             return
         speed = max(-100, min(100, int(speed)))
-        duty  = int(abs(speed) / 100 * 1023)
+        duty  = int(abs(speed) / 100.0 * 1023)
         if speed > 0:
-            self._in1.duty(duty)
-            self._in2.duty(0)
+            # Slow Decay (Brake/Drive) Forward: Maintains continuous magnetic field & high torque
+            self._in1.duty(1023)
+            self._in2.duty(1023 - duty)
         elif speed < 0:
-            self._in1.duty(0)
-            self._in2.duty(duty)
+            # Slow Decay (Brake/Drive) Reverse: Maintains continuous magnetic field & high torque
+            self._in1.duty(1023 - duty)
+            self._in2.duty(1023)
         else:
             self._in1.duty(0)
             self._in2.duty(0)
@@ -88,7 +91,7 @@ class Output:
     def __init__(self, index: int):
         pin_num = _OUTPUT_PINS.get(index, _OUTPUT_PINS[1])
         try:
-            self._pwm = machine.PWM(machine.Pin(pin_num), freq=1000)
+            self._pwm = machine.PWM(machine.Pin(pin_num), freq=20000)
         except Exception as e:
             print(f"Output {index} init failed: {e}")
             self._pwm = None
@@ -97,7 +100,7 @@ class Output:
         if not self._pwm:
             return
         speed = max(0, min(100, int(speed)))
-        self._pwm.duty(int(speed / 100 * 1023))
+        self._pwm.duty(int(speed / 100.0 * 1023))
 
     def stop(self):
         if self._pwm:

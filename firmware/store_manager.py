@@ -22,8 +22,8 @@ micropython.alloc_emergency_exception_buf(100)
 _MOTOR_PIN_MAP = [
     (hardware.M1_IN1, hardware.M1_IN2), # 0: M1 (Left)
     (hardware.M2_IN1, hardware.M2_IN2), # 1: M2 (Right)
-    (hardware.M3_IN1, hardware.M3_IN2), # 2: M3 (Aux)
-    (hardware.OUT1, hardware.OUT2),     # 3: OUT 1/2
+    (hardware.M3_IN1, hardware.M3_IN2), # 2: M3 (Aux 1)
+    (hardware.M4_IN1, hardware.M4_IN2), # 3: M4 (Aux 2)
 ]
 
 
@@ -248,14 +248,14 @@ class StoreManager:
 
         d.text(f"BLE:{self.bt_status[:4]} {self.dev_name[11:15]}", 4, 16, 1)
         ip_s = self.wifi_mgr.ip_address if self.wifi_mgr else "192.168.4.1"
-        d.text(f"IP :{ip_s}", 4, 30, 1)
+        d.text(f"IP :{ip_s[:12]}", 4, 30, 1)
         if self.prog_status == "RUNNING":
             st = "RUNNING"
         elif self.last_error == "NO CODE":
             st = "NO CODE"
         else:
             st = "READY"
-        d.text(f"SYS:{st}", 4, 46, 1)
+        d.text(f"SYS:{st[:11]}", 4, 46, 1)
         d.show()
 
     def render_page_script(self):
@@ -279,12 +279,12 @@ class StoreManager:
             elapsed = (time.ticks_diff(time.ticks_ms(), self.exec_start_ticks)) // 1000
             d.text(f"RUN : {elapsed}s", 6, 48, 1)
         elif self.last_error == "NO CODE" or fsize <= 0:
-            d.text("STATUS: NO CODE", 6, 48, 1)
+            d.text("STAT: NO CODE", 6, 48, 1)
         elif self.last_error:
-            err_s = str(self.last_error)[:8]
+            err_s = str(self.last_error)[:9]
             d.text(f"ERR : {err_s}", 6, 48, 1)
         else:
-            d.text("STATUS: READY", 6, 48, 1)
+            d.text("STAT: READY", 6, 48, 1)
 
         d.show()
 
@@ -294,9 +294,9 @@ class StoreManager:
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("3/7: BATTERY (2S)", 4, 2, 0)
+        d.text("3/7: BATTERY 2S", 8, 2, 0)
 
-        d.text(f"PACK: {self.last_volts:.2f} V 2S", 6, 15, 1)
+        d.text(f"VOLT: {self.last_volts:.2f}V", 6, 15, 1)
         if self.ina219:
             d.text(f"CURR: {int(self.last_ma)} mA", 6, 26, 1)
         else:
@@ -326,9 +326,9 @@ class StoreManager:
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("4/7: MOTOR TEST", 4, 2, 0)
+        d.text("4/7: MOTOR TEST", 8, 2, 0)
 
-        mtr_names = ["M1 (LEFT)", "M2 (RIGHT)", "M3 (AUX)", "OUT (CH12)"]
+        mtr_names = ["M1-LEFT", "M2-RIGHT", "M3-AUX", "M4-AUX"]
         mtr_str = mtr_names[self.motor_test_idx]
         cur0 = "> " if self.motor_cursor == 0 else "  "
         d.text(f"{cur0}MTR:{mtr_str}", 4, 16, 1)
@@ -344,7 +344,7 @@ class StoreManager:
             d.text(f"> RUNNING{dots:<3} <", 8, 49, 0)
         else:
             d.rect(4, 45, 120, 15, 1)
-            d.text("    STOPPED    ", 8, 49, 1)
+            d.text("   STOPPED   ", 12, 49, 1)
 
         d.show()
 
@@ -354,7 +354,7 @@ class StoreManager:
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("5/7: SERVO TEST", 4, 2, 0)
+        d.text("5/7: SERVO TEST", 8, 2, 0)
 
         srv_name = "S1 (D18)" if self.servo_idx == 0 else "S2 (D19)"
         cur0 = "> " if self.servo_cursor == 0 else "  "
@@ -371,7 +371,7 @@ class StoreManager:
             d.text(f"> SWEEP:{int(self.servo_curr_angle):>3d} <", 8, 53, 0)
         else:
             d.rect(4, 51, 120, 12, 1)
-            d.text("    STOPPED    ", 8, 53, 1)
+            d.text("   STOPPED   ", 12, 53, 1)
 
         d.show()
 
@@ -381,8 +381,7 @@ class StoreManager:
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        mode_tag = "PAUSED" if self.sensor_paused else "LIVE"
-        d.text(f"6/7: SENSORS ({mode_tag[:4]})", 4, 2, 0)
+        d.text("6/7: SENSORS", 16, 2, 0)
 
         if self.sensor_view_idx == 0:
             # Multi-Sensor Triple HUD (S1, S2, S3)
@@ -454,16 +453,16 @@ class StoreManager:
         if speed == 0:
             return
         pins = _MOTOR_PIN_MAP[idx]
-        duty = int(abs(speed) / 100 * 1023)
+        duty = int(abs(speed) / 100.0 * 1023)
         try:
-            p1 = machine.PWM(machine.Pin(pins[0]), freq=1000)
-            p2 = machine.PWM(machine.Pin(pins[1]), freq=1000)
+            p1 = machine.PWM(machine.Pin(pins[0]), freq=20000)
+            p2 = machine.PWM(machine.Pin(pins[1]), freq=20000)
             if speed > 0:
-                p1.duty(duty)
-                p2.duty(0)
+                p1.duty(1023)
+                p2.duty(1023 - duty)
             else:
-                p1.duty(0)
-                p2.duty(duty)
+                p1.duty(1023 - duty)
+                p2.duty(1023)
             self._active_motor_pwms = [p1, p2]
         except Exception as e:
             print("MGR: Motor test drive error:", e)
@@ -477,7 +476,7 @@ class StoreManager:
                 except Exception:
                     pass
             self._active_motor_pwms = []
-        for pin_num in [hardware.M1_IN1, hardware.M1_IN2, hardware.M2_IN1, hardware.M2_IN2, hardware.M3_IN1, hardware.M3_IN2, hardware.OUT1, hardware.OUT2]:
+        for pin_num in [hardware.M1_IN1, hardware.M1_IN2, hardware.M2_IN1, hardware.M2_IN2, hardware.M3_IN1, hardware.M3_IN2, hardware.M4_IN1, hardware.M4_IN2]:
             try:
                 machine.Pin(pin_num, machine.Pin.OUT).value(0)
             except Exception:
@@ -1058,7 +1057,7 @@ class StoreManager:
         print(f"MGR: Program Execution Started (Session {self.exec_start_ticks})")
         self.render_active_page()
 
-    def stop_prog(self, err=None):
+    def stop_prog(self, err=None, hold_display_ms=0):
         self.prog_status = "STOPPED"
         self._in_exec = False
         self.last_error = str(err) if err else None
@@ -1066,9 +1065,13 @@ class StoreManager:
         self.write_out("STATUS:STOPPED\n")
         print("MGR: Program Execution Stopped.")
 
-        # Safety reset for motor and output pins
+        # Safety reset for motor and output pins immediately
         self._stop_all_motors()
         self._stop_servo()
+
+        # Hold current display contents (e.g. error message) before restoring default UI
+        if hold_display_ms > 0:
+            time.sleep_ms(hold_display_ms)
 
         # Return to currently active page
         if self.display and not self.is_uploading:
