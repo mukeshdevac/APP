@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Play, ArrowLeft, Bot, Sparkles, Terminal, Zap, Upload, BookOpen, ChevronDown, ChevronRight, Code2, Copy, Check, FileCode, X, FolderOpen, Save, Edit3, RotateCcw, Download, Battery, Lightbulb, Tv, Radio, RotateCw, Fan, AlertTriangle, Maximize2, Sliders, Target, Search, Activity, Compass, Database, Cpu, GraduationCap } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { connectionManager } from '../../../utils/ConnectionManager';
@@ -8,7 +8,6 @@ import AIAgent from '../../ai-agent/components/AIAgent';
 import SerialTerminal from '../../../components/common/SerialTerminal';
 import useAppStore from '../../../store/appStore';
 import InteractiveCurriculumGuide from './InteractiveCurriculumGuide';
-import { CURRICULUM_MODULES } from '../data/curriculumData';
 
 // Example projects with 1-click workspace loading & interactive curriculum pairing
 const EXAMPLE_PROGRAMS = [
@@ -255,7 +254,7 @@ const ExampleDropdown = ({ onSelect }) => {
 
     const handleItemClick = (item) => {
         setSelectedId(item.id);
-        onSelect(item.xml, item.id);
+        onSelect(item.xml);
         toast.success(`Loaded example: ${item.name}`);
         setIsOpen(false);
     };
@@ -287,17 +286,18 @@ const ExampleDropdown = ({ onSelect }) => {
         <div ref={dropdownRef} style={{ position: 'relative' }}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                title="Explore multi-block practical robot recipes (Free & open to everyone)"
                 style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
                     background: isOpen ? '#F1F5F9' : '#FFFFFF',
                     color: '#1E293B',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid #CBD5E1',
                     borderRadius: '8px',
                     padding: '6px 12px',
                     cursor: 'pointer',
-                    fontWeight: '600',
+                    fontWeight: '700',
                     fontSize: '0.82rem',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                     transition: 'all 0.15s ease'
@@ -306,14 +306,15 @@ const ExampleDropdown = ({ onSelect }) => {
                 <BookOpen size={14} color="#0284C7" />
                 <span>Examples</span>
                 <span style={{
-                    background: '#E0F2FE',
-                    color: '#0369A1',
-                    fontSize: '0.68rem',
+                    background: '#DCFCE7',
+                    color: '#15803D',
+                    fontSize: '0.64rem',
                     padding: '1px 6px',
                     borderRadius: '999px',
-                    fontWeight: '700'
+                    fontWeight: '800',
+                    letterSpacing: '0.3px'
                 }}>
-                    {EXAMPLE_PROGRAMS.length}
+                    FREE
                 </span>
                 <ChevronDown
                     size={14}
@@ -348,9 +349,9 @@ const ExampleDropdown = ({ onSelect }) => {
                             flexDirection: 'column'
                         }}
                     >
-                        {/* Header with Title and Count */}
+                        {/* Header with Title and Public Access Badge */}
                         <div style={{
-                            padding: '12px 16px 10px',
+                            padding: '14px 16px 10px',
                             background: '#F8FAFC',
                             borderBottom: '1px solid #E2E8F0',
                             display: 'flex',
@@ -360,23 +361,26 @@ const ExampleDropdown = ({ onSelect }) => {
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <span style={{ fontSize: '0.74rem', fontWeight: '800', color: '#0F172A', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
-                                        Example Projects
+                                        Multi-Block Code Examples
                                     </span>
                                     <span style={{
-                                        fontSize: '0.65rem',
-                                        fontWeight: '700',
-                                        background: '#E2E8F0',
-                                        color: '#475569',
+                                        fontSize: '0.62rem',
+                                        fontWeight: '800',
+                                        background: '#DCFCE7',
+                                        color: '#15803D',
                                         padding: '1px 6px',
                                         borderRadius: '999px'
                                     }}>
-                                        {filteredPrograms.length} / {EXAMPLE_PROGRAMS.length}
+                                        OPEN TO ALL
                                     </span>
                                 </div>
-                                <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: '500' }}>
-                                    Click project to load
+                                <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: '600' }}>
+                                    {filteredPrograms.length} Recipes
                                 </span>
                             </div>
+                            <p style={{ margin: 0, fontSize: '0.74rem', color: '#64748B', lineHeight: 1.4 }}>
+                                Ready-to-use projects demonstrating multiple blocks working together. Click any recipe to load into workspace.
+                            </p>
 
                             {/* Search Bar Input */}
                             <div style={{
@@ -429,7 +433,6 @@ const ExampleDropdown = ({ onSelect }) => {
                                 {tiers.map((tier) => {
                                     const isActive = selectedTier === tier;
                                     const count = tierCounts[tier] || 0;
-                                    const diffStyle = DIFFICULTY_STYLES[tier];
                                     return (
                                         <button
                                             key={tier}
@@ -647,14 +650,52 @@ const ExampleDropdown = ({ onSelect }) => {
     );
 };
 
-const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUpload, logs, onClearLogs }) => {
+const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs, onClearLogs }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [sidebarTab, setSidebarTab] = useState('preview'); // 'preview' or 'monitor'
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isMaximized, setIsMaximized] = useState(false);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
-    const [activeGuideModuleId, setActiveGuideModuleId] = useState('01_digital_output');
-    const [sensorValue, setSensorValue] = useState(0);
+    const [activeGuideModuleId, setActiveGuideModuleId] = useState('01_intro_block_coding');
+    const [guideWidth, setGuideWidth] = useState(() => {
+        try {
+            const saved = localStorage.getItem('ten_lms_guide_width');
+            return saved ? Math.max(340, Math.min(parseInt(saved, 10), 850)) : 480;
+        } catch {
+            return 480;
+        }
+    });
+    const [isResizingGuide, setIsResizingGuide] = useState(false);
+
+    const handleMouseDownGuideResize = React.useCallback((e) => {
+        e.preventDefault();
+        setIsResizingGuide(true);
+        const startX = e.clientX;
+        const startWidth = guideWidth;
+
+        const handleMouseMove = (moveEvent) => {
+            const delta = startX - moveEvent.clientX;
+            const maxWidth = Math.min(window.innerWidth * 0.72, 880);
+            const newWidth = Math.max(340, Math.min(startWidth + delta, maxWidth));
+            setGuideWidth(newWidth);
+        };
+
+        const handleMouseUp = () => {
+            setIsResizingGuide(false);
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            try {
+                localStorage.setItem('ten_lms_guide_width', guideWidth.toString());
+            } catch (err) {
+                console.error(err);
+            }
+            window.dispatchEvent(new Event('resize'));
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    }, [guideWidth]);
+    const [, setSensorValue] = useState(0);
     const [pythonCode, setPythonCode] = useState('');
     const [copied, setCopied] = useState(false);
     const [copiedLogs, setCopiedLogs] = useState(false);
@@ -695,6 +736,7 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
     const handleCopyLogs = React.useCallback(() => {
         if (logs && logs.length > 0) {
             const raw = logs.join('');
+            /* eslint-disable-next-line no-control-regex */
             const clean = raw.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
             navigator.clipboard.writeText(clean);
             setCopiedLogs(true);
@@ -860,6 +902,7 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
             connectionManager.onSensorUpdate = null;
             window.removeEventListener('GLOBAL_UPLOAD_TRIGGER', handleGlobalTrigger);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleRun = async () => {
@@ -959,51 +1002,45 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
 
                 <div className="ide-header-right">
                     <ExampleDropdown
-                        onSelect={(xml, id) => {
-                            if (editorRef.current) {
+                        onSelect={(xml) => {
+                            if (editorRef.current && editorRef.current.loadXml) {
                                 editorRef.current.loadXml(xml);
-                            }
-                            if (id) {
-                                const matchingMod = CURRICULUM_MODULES.find(m => m.exampleId === id || m.id.startsWith(id));
-                                if (matchingMod) {
-                                    setActiveGuideModuleId(matchingMod.id);
-                                }
-                                setIsGuideOpen(true);
                             }
                         }}
                     />
 
-                    {/* Dedicated Learning Academy Companion Button */}
+                    {/* Dedicated TEN Robo-Academy LMS Button (Exclusive Guided Track) */}
                     <button
                         onClick={() => setIsGuideOpen(!isGuideOpen)}
-                        title={isGuideOpen ? "Close Learning Companion Guide" : "Open Interactive Learning Guide"}
+                        title={isGuideOpen ? "Close Academy LMS Guide" : "Open TEN Academy LMS (Exclusive Linear Curriculum)"}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
-                            background: isGuideOpen ? '#EDE9FE' : '#FFFFFF',
-                            color: isGuideOpen ? '#7C3AED' : '#1E293B',
-                            border: isGuideOpen ? '1px solid #DDD6FE' : '1px solid #E2E8F0',
+                            background: isGuideOpen ? 'linear-gradient(135deg, #7C3AED, #6D28D9)' : '#FFFFFF',
+                            color: isGuideOpen ? '#FFFFFF' : '#1E293B',
+                            border: isGuideOpen ? '1px solid #6D28D9' : '1px solid #CBD5E1',
                             borderRadius: '8px',
                             padding: '6px 12px',
                             cursor: 'pointer',
                             fontWeight: '700',
                             fontSize: '0.82rem',
-                            boxShadow: isGuideOpen ? '0 2px 8px rgba(124, 58, 237, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
+                            boxShadow: isGuideOpen ? '0 2px 10px rgba(124, 58, 237, 0.25)' : '0 1px 2px rgba(0,0,0,0.03)',
                             transition: 'all 0.15s ease'
                         }}
                     >
-                        <GraduationCap size={15} color={isGuideOpen ? '#7C3AED' : '#8B5CF6'} />
-                        <span>Guide</span>
+                        <GraduationCap size={15} color={isGuideOpen ? '#FFFFFF' : '#7C3AED'} />
+                        <span>Academy LMS</span>
                         <span style={{
-                            background: isGuideOpen ? '#7C3AED' : '#F3E8FF',
-                            color: isGuideOpen ? '#FFFFFF' : '#7C3AED',
-                            fontSize: '0.64rem',
-                            padding: '1px 5px',
+                            background: isGuideOpen ? 'rgba(255, 255, 255, 0.22)' : 'linear-gradient(135deg, #EDE9FE, #DDD6FE)',
+                            color: isGuideOpen ? '#FFFFFF' : '#6D28D9',
+                            fontSize: '0.62rem',
+                            padding: '1px 6px',
                             borderRadius: '999px',
-                            fontWeight: '800'
+                            fontWeight: '800',
+                            letterSpacing: '0.4px'
                         }}>
-                            PRO
+                            EXCLUSIVE
                         </span>
                     </button>
 
@@ -1182,8 +1219,8 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
             <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', padding: '8px', gap: '8px', minHeight: 0, height: '100%', boxSizing: 'border-box' }}>
                 {/* Full Blockly Workspace Area with Dynamic Flex */}
                 <div style={{ 
-                    flex: isGuideOpen ? '1 1 58%' : '1 1 100%', 
-                    minWidth: 0,
+                    flex: '1 1 0%', 
+                    minWidth: '260px',
                     position: 'relative', 
                     overflow: 'hidden', 
                     borderRadius: '12px', 
@@ -1191,27 +1228,56 @@ const IDE = ({ project, onBack, isConnected, setView, uploadProgress = 0, onUplo
                     boxShadow: '0 1px 4px rgba(0, 0, 0, 0.04)', 
                     background: 'white', 
                     height: '100%', 
-                    minHeight: 0,
-                    transition: 'flex 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                    minHeight: 0
                 }}>
                     <BlocklyEditor ref={editorRef} project={project} onCodeChange={handleCodeChange} />
                 </div>
+
+                {/* Draggable Split-Screen Slider / Resizer Divider */}
+                {isGuideOpen && (
+                    <div
+                        onMouseDown={handleMouseDownGuideResize}
+                        title="Drag left/right to resize Workspace and LMS Window"
+                        style={{
+                            width: '10px',
+                            margin: '0 -2px',
+                            cursor: 'col-resize',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 40,
+                            userSelect: 'none',
+                            position: 'relative'
+                        }}
+                    >
+                        <div style={{
+                            width: '4px',
+                            height: '42px',
+                            borderRadius: '999px',
+                            background: isResizingGuide ? '#6366F1' : '#CBD5E1',
+                            boxShadow: isResizingGuide ? '0 0 10px rgba(99, 102, 241, 0.6)' : 'none',
+                            transition: 'all 0.15s ease'
+                        }} />
+                    </div>
+                )}
 
                 {/* Side-by-Side Interactive Learning Companion Window */}
                 <AnimatePresence>
                     {isGuideOpen && (
                         <Motion.div
-                            initial={{ opacity: 0, width: 0, x: 20 }}
-                            animate={{ opacity: 1, width: '45%', x: 0 }}
-                            exit={{ opacity: 0, width: 0, x: 20 }}
-                            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: guideWidth }}
+                            exit={{ opacity: 0, width: 0 }}
+                            transition={{ duration: isResizingGuide ? 0 : 0.2 }}
                             style={{
-                                minWidth: '420px',
-                                maxWidth: '640px',
+                                width: `${guideWidth}px`,
+                                minWidth: '320px',
+                                maxWidth: '88vw',
                                 height: '100%',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                flexShrink: 0
+                                flexShrink: 0,
+                                zIndex: 20
                             }}
                         >
                             <InteractiveCurriculumGuide
