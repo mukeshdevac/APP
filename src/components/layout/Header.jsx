@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import logoDark from '../../assets/logo-dark.png';
 import logoLight from '../../assets/logo-light.png';
 import { Wifi, WifiOff, Bluetooth, Usb, Globe, Menu, X, Bot, Blocks, Battery, Zap, AlertTriangle } from 'lucide-react';
 import { connectionManager } from '../../utils/ConnectionManager';
 import ThemeToggle from '../common/ThemeToggle';
-import { motion as Motion } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../app/providers/ThemeProvider';
 import { toast } from '../../hooks/useToast';
 
@@ -16,6 +16,45 @@ const Header = ({ isConnected, setIsConnected, view, setView, uploadProgress, on
     const [wifiHost, setWifiHost] = useState('192.168.4.1');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showBattTooltip, setShowBattTooltip] = useState(false);
+    const leaveTimerRef = useRef(null);
+    const battContainerRef = useRef(null);
+
+    const handleBattMouseEnter = useCallback(() => {
+        if (leaveTimerRef.current) {
+            clearTimeout(leaveTimerRef.current);
+            leaveTimerRef.current = null;
+        }
+        setShowBattTooltip(true);
+    }, []);
+
+    const handleBattMouseLeave = useCallback(() => {
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+        leaveTimerRef.current = setTimeout(() => {
+            setShowBattTooltip(false);
+        }, 220);
+    }, []);
+
+    const handleBattToggle = useCallback((e) => {
+        e.stopPropagation();
+        if (leaveTimerRef.current) {
+            clearTimeout(leaveTimerRef.current);
+            leaveTimerRef.current = null;
+        }
+        setShowBattTooltip(prev => !prev);
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (battContainerRef.current && !battContainerRef.current.contains(e.target)) {
+                setShowBattTooltip(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+        };
+    }, []);
 
     const handleConnect = async () => {
         setIsConnecting(true);
@@ -99,23 +138,29 @@ const Header = ({ isConnected, setIsConnected, view, setView, uploadProgress, on
                 {/* Live Battery Telemetry Widget */}
                 {isConnected && (
                     <div 
+                        ref={battContainerRef}
                         style={{ position: 'relative' }}
-                        onMouseEnter={() => setShowBattTooltip(true)}
-                        onMouseLeave={() => setShowBattTooltip(false)}
+                        onMouseEnter={handleBattMouseEnter}
+                        onMouseLeave={handleBattMouseLeave}
                     >
-                        <Motion.div 
-                            animate={isLowBatt ? { scale: [1, 1.05, 1] } : {}}
-                            transition={{ repeat: Infinity, duration: 1.2 }}
+                        <div 
+                            role="button"
+                            tabIndex={0}
+                            onClick={handleBattToggle}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleBattToggle(e); }}
+                            title="Click or hover for battery telemetry details"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: `1px solid ${isLowBatt ? '#ef4444' : 'rgba(255, 255, 255, 0.12)'}`,
+                                background: showBattTooltip ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                                border: `1px solid ${isLowBatt ? '#ef4444' : (showBattTooltip ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.12)')}`,
                                 padding: '6px 12px',
                                 borderRadius: '10px',
                                 cursor: 'pointer',
-                                backdropFilter: 'blur(8px)'
+                                backdropFilter: 'blur(8px)',
+                                transition: 'background-color 0.2s ease, border-color 0.2s ease',
+                                userSelect: 'none'
                             }}
                         >
                             {/* Graphic Battery Cell */}
@@ -159,55 +204,71 @@ const Header = ({ isConnected, setIsConnected, view, setView, uploadProgress, on
                                     {battVolts > 0 ? `${battVolts.toFixed(1)}V` : '2S Pack'}
                                 </span>
                             </div>
-                        </Motion.div>
+                        </div>
 
-                        {/* Interactive Battery Popover Tooltip */}
-                        {showBattTooltip && (
-                            <Motion.div 
-                                initial={{ opacity: 0, y: 5, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                style={{
-                                    position: 'absolute',
-                                    top: '110%',
-                                    right: 0,
-                                    width: '210px',
-                                    background: 'var(--surface, #1e293b)',
-                                    color: 'var(--text, #fff)',
-                                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                                    borderRadius: '10px',
-                                    padding: '12px',
-                                    boxShadow: '0 10px 25px rgba(0,0,0,0.35)',
-                                    zIndex: 200,
-                                    fontSize: '0.75rem',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '6px',
-                                    pointerEvents: 'none'
-                                }}
-                            >
-                                <div style={{ fontWeight: '800', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px', color: battColor, display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>2S Li-ion Battery</span>
-                                    <span>{battPct}%</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Pack Voltage:</span>
-                                    <span style={{ fontWeight: '700' }}>{battVolts.toFixed(2)} V</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Current Draw:</span>
-                                    <span style={{ fontWeight: '700' }}>{battMa ? `${battMa.toFixed(0)} mA` : 'N/A'}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Power:</span>
-                                    <span style={{ fontWeight: '700' }}>{battPower ? `${battPower.toFixed(2)} W` : '0.0 W'}</span>
-                                </div>
-                                {isLowBatt && (
-                                    <div style={{ color: '#ef4444', fontWeight: '800', marginTop: '4px', fontSize: '0.7rem' }}>
-                                        ⚠️ Low Battery: Please recharge!
+                        {/* Interactive Battery Popover Tooltip with Hover Bridge */}
+                        <AnimatePresence>
+                            {showBattTooltip && (
+                                <Motion.div 
+                                    key="batt-telemetry-popover"
+                                    initial={{ opacity: 0, y: 4, scale: 0.96 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                                    onMouseEnter={handleBattMouseEnter}
+                                    onMouseLeave={handleBattMouseLeave}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 'calc(100% + 8px)',
+                                        right: 0,
+                                        width: '210px',
+                                        background: 'var(--surface, #1e293b)',
+                                        color: 'var(--text, #fff)',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        borderRadius: '10px',
+                                        padding: '12px',
+                                        boxShadow: '0 10px 25px rgba(0,0,0,0.35)',
+                                        zIndex: 200,
+                                        fontSize: '0.75rem',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '6px',
+                                        pointerEvents: 'auto'
+                                    }}
+                                >
+                                    {/* Invisible Hover Bridge spanning gap to parent pill */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '-12px',
+                                        left: 0,
+                                        right: 0,
+                                        height: '12px'
+                                    }} />
+
+                                    <div style={{ fontWeight: '800', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px', color: battColor, display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>2S Li-ion Battery</span>
+                                        <span>{battPct}%</span>
                                     </div>
-                                )}
-                            </Motion.div>
-                        )}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>Pack Voltage:</span>
+                                        <span style={{ fontWeight: '700' }}>{battVolts.toFixed(2)} V</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>Current Draw:</span>
+                                        <span style={{ fontWeight: '700' }}>{battMa ? `${battMa.toFixed(0)} mA` : 'N/A'}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>Power:</span>
+                                        <span style={{ fontWeight: '700' }}>{battPower ? `${battPower.toFixed(2)} W` : '0.0 W'}</span>
+                                    </div>
+                                    {isLowBatt && (
+                                        <div style={{ color: '#ef4444', fontWeight: '800', marginTop: '4px', fontSize: '0.7rem' }}>
+                                            ⚠️ Low Battery: Please recharge!
+                                        </div>
+                                    )}
+                                </Motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 )}
 

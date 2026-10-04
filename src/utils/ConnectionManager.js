@@ -346,29 +346,39 @@ export class ConnectionManager {
                         if (sIdx !== -1 && eIdx > sIdx) {
                             const d = JSON.parse(cleanLine.substring(sIdx, eIdx + 1));
                             if (this.onTelemetryUpdate) {
-                                this.onTelemetryUpdate({
-                                    v: d.v !== undefined ? Number(d.v) : 0,
-                                    pct: d.pct !== undefined ? Number(d.pct) : (d.b !== undefined ? Number(d.b) : 0),
-                                    ma: d.ma !== undefined ? Number(d.ma) : (d.i !== undefined ? Number(d.i) : 0),
-                                    p: d.p !== undefined ? Number(d.p) : 0,
-                                    b: d.pct !== undefined ? Number(d.pct) : (d.b !== undefined ? Number(d.b) : 0)
-                                });
+                                const update = {};
+                                if (d.v !== undefined) update.v = Number(d.v);
+                                if (d.pct !== undefined) update.pct = Number(d.pct);
+                                else if (d.b !== undefined) update.pct = Number(d.b);
+                                if (d.ma !== undefined) update.ma = Number(d.ma);
+                                else if (d.i !== undefined) update.ma = Number(d.i);
+                                if (d.p !== undefined) update.p = Number(d.p);
+                                if (update.pct !== undefined) update.b = update.pct;
+                                this.onTelemetryUpdate(update);
                             }
                         }
                     } catch (_) {}
                 }
+                // Extract Key-Value telemetry (V=..., I=..., P=..., B=...) if JSON was not present
+                else {
+                    const vMatch = cleanLine.match(/V=([-\d.]+)/i);
+                    const iMatch = cleanLine.match(/I=([-\d.]+)/i);
+                    const pMatch = cleanLine.match(/P=([-\d.]+)/i);
+                    const bMatch = cleanLine.match(/B=([-\d]+)/i);
 
-                // Extract Key-Value telemetry (V=..., I=..., P=..., B=...)
-                const kvMatch = cleanLine.match(/(?:V=([-\d.]+))?.*?(?:I=([-\d.]+))?.*?(?:P=([-\d.]+))?.*?B=([-\d]+)/i);
-                if (kvMatch && (kvMatch[1] !== undefined || kvMatch[4] !== undefined)) {
-                    if (this.onTelemetryUpdate) {
-                        this.onTelemetryUpdate({
-                            v: kvMatch[1] ? parseFloat(kvMatch[1]) : 0,
-                            ma: kvMatch[2] ? parseFloat(kvMatch[2]) : 0,
-                            p: kvMatch[3] ? parseFloat(kvMatch[3]) : 0,
-                            pct: kvMatch[4] ? Math.max(0, Math.min(100, parseInt(kvMatch[4], 10))) : 0,
-                            b: kvMatch[4] ? Math.max(0, Math.min(100, parseInt(kvMatch[4], 10))) : 0
-                        });
+                    if (vMatch || iMatch || pMatch || bMatch) {
+                        const update = {};
+                        if (vMatch) update.v = parseFloat(vMatch[1]);
+                        if (iMatch) update.ma = parseFloat(iMatch[1]);
+                        if (pMatch) update.p = parseFloat(pMatch[1]);
+                        if (bMatch) {
+                            const pct = Math.max(0, Math.min(100, parseInt(bMatch[1], 10)));
+                            update.pct = pct;
+                            update.b = pct;
+                        }
+                        if (this.onTelemetryUpdate) {
+                            this.onTelemetryUpdate(update);
+                        }
                     }
                 }
 

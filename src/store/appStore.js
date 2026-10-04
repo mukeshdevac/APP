@@ -42,13 +42,25 @@ const useAppStore = create((set) => ({
 
   setUploadProgress: (uploadProgress) => set({ uploadProgress }),
 
-  setTelemetry: (telemetry) => set((state) => ({
-    telemetry: {
-      ...state.telemetry,
-      ...telemetry,
-      pct: telemetry.pct !== undefined ? telemetry.pct : (telemetry.b !== undefined ? telemetry.b : state.telemetry.pct)
+  setTelemetry: (newTelemetry) => set((state) => {
+    const cur = state.telemetry;
+    // Guard: preserve known positive pack voltage against partial zero drops
+    const v = (newTelemetry.v !== undefined && Number(newTelemetry.v) > 0)
+      ? Number(newTelemetry.v)
+      : (newTelemetry.v !== undefined && !cur.v ? Number(newTelemetry.v) : cur.v);
+    const pct = newTelemetry.pct !== undefined ? Number(newTelemetry.pct) : (newTelemetry.b !== undefined ? Number(newTelemetry.b) : cur.pct);
+    const ma = newTelemetry.ma !== undefined ? Number(newTelemetry.ma) : (newTelemetry.i !== undefined ? Number(newTelemetry.i) : cur.ma);
+    const p = newTelemetry.p !== undefined ? Number(newTelemetry.p) : (ma > 0 && v > 0 ? Number((v * (ma / 1000.0)).toFixed(2)) : cur.p);
+    const b = pct;
+
+    if (cur.v === v && cur.pct === pct && cur.ma === ma && cur.p === p && cur.b === b) {
+      return state;
     }
-  })),
+
+    return {
+      telemetry: { v, pct, ma, p, b }
+    };
+  }),
 
   addLog: (line) =>
     set((state) => ({
