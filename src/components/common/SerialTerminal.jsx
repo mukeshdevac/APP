@@ -9,7 +9,39 @@ import { toast } from '../../hooks/useToast';
 const stripAnsi = (str) =>
     str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
 
-const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false }) => {
+const filterPowerTelemetry = (str) => {
+    if (!str) return '';
+    return str
+        .split('\n')
+        .map((line) => {
+            const trimmed = line.trim();
+            if (
+                trimmed.includes('POWER:') ||
+                /\b[VIBP]=[-\d.]+/i.test(trimmed) ||
+                /B=\d+/i.test(trimmed) ||
+                /"(?:v|pct|ma|p)"\s*:/i.test(trimmed) ||
+                /^[\s,]*[\d.]+\}\s*$/.test(trimmed)
+            ) {
+                const stripped = trimmed
+                    .replace(/POWER:\s*\{[^}]*\}/gi, '')
+                    .replace(/POWER:\s*V=[-\d.]+,?I=[-\d.]+,?P=[-\d.]+,?B=\d+/gi, '')
+                    .replace(/POWER:[^\s,]*/gi, '')
+                    .replace(/\{[^{}]*"(?:v|pct|ma|p|b)"\s*:[^{}]*\}/gi, '')
+                    .replace(/(?:^|[,;\s])(?:V=[-\d.]+|I=[-\d.]+|P=[-\d.]+|B=\d+)+/gi, '')
+                    .replace(/^[\s,]*[\d.]+\}\s*$/g, '')
+                    .replace(/(?:^|[,;\s])"(?:v|pct|ma|p|b)"\s*:\s*[\d.]+/gi, '')
+                    .trim();
+                return (!stripped || /^[,;{}.\s]+$/.test(stripped)) ? '' : stripped;
+            }
+            return line;
+        })
+        .filter((l) => l.length > 0)
+        .join('\n');
+};
+
+const cleanSerialLogs = (str) => filterPowerTelemetry(stripAnsi(str));
+
+const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false, isVisible = true }) => {
     const terminalRef = useRef(null);
     const telemetry = useAppStore(s => s.telemetry);
     const [autoScroll, setAutoScroll] = useState(true);
@@ -21,7 +53,7 @@ const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false }) => {
 
     const handleCopyLogs = () => {
         if (logs && logs.length > 0) {
-            const clean = stripAnsi(logs.join(''));
+            const clean = cleanSerialLogs(logs.join(''));
             navigator.clipboard.writeText(clean);
             setCopied(true);
             toast.success("Serial logs copied to clipboard!");
@@ -31,12 +63,12 @@ const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false }) => {
         }
     };
 
-    // Auto-scroll when enabled
+    // Auto-scroll when enabled or when becoming visible
     useEffect(() => {
-        if (autoScroll && terminalRef.current) {
+        if (isVisible && autoScroll && terminalRef.current) {
             terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
         }
-    }, [logs, autoScroll]);
+    }, [logs, autoScroll, isVisible]);
 
     // Send command to REPL
     const handleSendRepl = async (commandToSend) => {
@@ -181,7 +213,7 @@ const SerialTerminal = React.memo(({ logs, onClear, isEmbedded = false }) => {
                     overscrollBehavior: 'contain'
                 }}
             >
-                {logs.length === 0 ? <span style={{ color: 'rgba(255,255,255,0.45)', fontStyle: 'italic' }}>Waiting for serial data...</span> : stripAnsi(logs.join(''))}
+                {logs.length === 0 ? <span style={{ color: 'rgba(255,255,255,0.45)', fontStyle: 'italic' }}>Waiting for serial data...</span> : cleanSerialLogs(logs.join(''))}
             </div>
 
             {/* REPL Interactive Command Bar - Clean White Theme */}

@@ -42,14 +42,25 @@ class StoreManager:
         self.last_power_telemetry = 0
         self.serial_active        = True
 
-        # Multi-Page Display State (7 Pages Total)
-        self.total_pages          = 7
+        # Multi-Page Display State (8 Pages Total)
+        self.total_pages          = 8
         self.current_page         = 0
         self.last_ui_refresh      = 0
         self.last_volts           = 0.0
         self.last_pct             = 0
         self.last_ma              = 0.0
         self.dev_name             = "TEN_DEVKIT"
+
+        # Active Python File Name
+        self.active_filename      = "app.py"
+
+        # Screensaver Config (Page 8)
+        self.screensaver_enabled        = True
+        self.screensaver_timeout_options = [15000, 30000, 60000, 120000, 300000]
+        self.screensaver_timeout_labels  = ["15 SEC", "30 SEC", "1 MIN", "2 MIN", "5 MIN"]
+        self.screensaver_timeout_idx    = 1 # 30 SEC default
+        self.saver_cursor               = 0 # 0: MODE, 1: TIME
+        self._load_settings()
 
         # Protocol Buffers & Upload State
         self._serial_buf          = bytearray()
@@ -208,12 +219,40 @@ class StoreManager:
         except Exception as e:
             print("MGR: WiFi Init Warning:", e)
 
-        # Transition to initial interactive UI page
-        self.render_active_page()
-
         # Serial Poller
         self._poller = select.poll()
         self._poller.register(sys.stdin, select.POLLIN)
+
+        # Transition to initial interactive UI page
+        self.render_active_page()
+
+    def _load_settings(self):
+        """Load persistent device settings from flash filesystem."""
+        try:
+            import ujson
+            with open("sys_cfg.json", "r") as f:
+                data = ujson.loads(f.read())
+                self.screensaver_enabled = data.get("saver_on", True)
+                self.screensaver_timeout_idx = data.get("saver_time", 1)
+                self.active_filename = data.get("active_file", "app.py")
+        except Exception:
+            self.screensaver_enabled = True
+            self.screensaver_timeout_idx = 1
+            self.active_filename = "app.py"
+
+    def _save_settings(self):
+        """Save device settings persistently to flash filesystem."""
+        try:
+            import ujson
+            data = {
+                "saver_on": self.screensaver_enabled,
+                "saver_time": self.screensaver_timeout_idx,
+                "active_file": getattr(self, 'active_filename', 'app.py')
+            }
+            with open("sys_cfg.json", "w") as f:
+                f.write(ujson.dumps(data))
+        except Exception:
+            pass
 
     def draw_logo(self):
         """Render the official high-fidelity TEN Robotics logo splash screen."""
@@ -239,12 +278,12 @@ class StoreManager:
     # ─────────────────────────────────────────────────────────────────────────────
 
     def render_page_connection(self):
-        """Page 0 (1/7: SYSTEM): Bluetooth, WiFi & Communication Status."""
+        """Page 0 (1/8: SYSTEM): Bluetooth, WiFi & Communication Status."""
         d = self.display
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("1/7: SYSTEM", 20, 2, 0)
+        d.text("1/8: SYSTEM", 20, 2, 0)
 
         d.text(f"BLE:{self.bt_status[:4]} {self.dev_name[11:15]}", 4, 16, 1)
         ip_s = self.wifi_mgr.ip_address if self.wifi_mgr else "192.168.4.1"
@@ -259,20 +298,25 @@ class StoreManager:
         d.show()
 
     def render_page_script(self):
-        """Page 1 (2/7: PROGRAM): Existing Script & Execution Status."""
+        """Page 1 (2/8: PROGRAM): Existing Script & Execution Status."""
         d = self.display
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("2/7: PROGRAM", 16, 2, 0)
+        d.text("2/8: PROGRAM", 16, 2, 0)
 
-        d.text("FILE: app.py", 6, 18, 1)
+        fname = getattr(self, 'active_filename', 'app.py')
+        d.text(f"FILE: {fname[:10]}", 6, 18, 1)
         try:
-            fsize = os.stat("app.py")[6]
+            fsize = os.stat(fname)[6]
             size_str = f"{fsize} B"
         except Exception:
-            size_str = "NONE"
-            fsize = 0
+            try:
+                fsize = os.stat("app.py")[6]
+                size_str = f"{fsize} B"
+            except Exception:
+                size_str = "NONE"
+                fsize = 0
         d.text(f"SIZE: {size_str[:9]}", 6, 33, 1)
 
         if self.prog_status == "RUNNING":
@@ -289,12 +333,12 @@ class StoreManager:
         d.show()
 
     def render_page_power(self):
-        """Page 2 (3/7: BATTERY - 2S Li-ion): Power, Gauge & Low-Battery Alarm Setting."""
+        """Page 2 (3/8: BATTERY - 2S Li-ion): Power, Gauge & Low-Battery Alarm Setting."""
         d = self.display
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("3/7: BATTERY 2S", 8, 2, 0)
+        d.text("3/8: BATTERY 2S", 8, 2, 0)
 
         d.text(f"VOLT: {self.last_volts:.2f}V", 6, 15, 1)
         if self.ina219:
@@ -321,12 +365,12 @@ class StoreManager:
         d.show()
 
     def render_page_motor_test(self):
-        """Page 3 (4/7: MOTOR TEST): Interactive Hardware Motor Tester."""
+        """Page 3 (4/8: MOTOR TEST): Interactive Hardware Motor Tester."""
         d = self.display
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("4/7: MOTOR TEST", 8, 2, 0)
+        d.text("4/8: MOTOR TEST", 8, 2, 0)
 
         mtr_names = ["M1-LEFT", "M2-RIGHT", "M3-AUX", "M4-AUX"]
         mtr_str = mtr_names[self.motor_test_idx]
@@ -349,12 +393,12 @@ class StoreManager:
         d.show()
 
     def render_page_servo_test(self):
-        """Page 4 (5/7: SERVO TEST): Interactive Servo Sweep Tester (Pins S1=18, S2=19)."""
+        """Page 4 (5/8: SERVO TEST): Interactive Servo Sweep Tester (Pins S1=18, S2=19)."""
         d = self.display
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("5/7: SERVO TEST", 8, 2, 0)
+        d.text("5/8: SERVO TEST", 8, 2, 0)
 
         srv_name = "S1 (D18)" if self.servo_idx == 0 else "S2 (D19)"
         cur0 = "> " if self.servo_cursor == 0 else "  "
@@ -376,12 +420,12 @@ class StoreManager:
         d.show()
 
     def render_page_sensors(self):
-        """Page 5 (6/7: SENSORS): Real-Time Live Analog Sensor Dashboard / HUD."""
+        """Page 5 (6/8: SENSORS): Real-Time Live Analog Sensor Dashboard / HUD."""
         d = self.display
         if not d: return
         d.fill(0)
         d.fill_rect(0, 0, 128, 11, 1)
-        d.text("6/7: SENSORS", 16, 2, 0)
+        d.text("6/8: SENSORS", 16, 2, 0)
 
         if self.sensor_view_idx == 0:
             # Multi-Sensor Triple HUD (S1, S2, S3)
@@ -421,6 +465,76 @@ class StoreManager:
 
         d.show()
 
+    def render_page_screensaver(self):
+        """Page 7 (8/8: SCREENSAVER): Screen Saver On/Off & Timer Configuration."""
+        d = self.display
+        if not d: return
+        d.fill(0)
+        d.fill_rect(0, 0, 128, 11, 1)
+        d.text("8/8: SCREENSAVER", 0, 2, 0)
+
+        cur0 = "> " if self.saver_cursor == 0 else "  "
+        d.text(f"{cur0}SAVER:", 4, 16, 1)
+        if self.screensaver_enabled:
+            d.fill_rect(76, 14, 46, 11, 1)
+            d.text(" ON ", 84, 16, 0)
+        else:
+            d.rect(76, 14, 46, 11, 1)
+            d.text(" OFF", 82, 16, 1)
+
+        cur1 = "> " if self.saver_cursor == 1 else "  "
+        time_label = self.screensaver_timeout_labels[self.screensaver_timeout_idx]
+        d.text(f"{cur1}TIME :", 4, 30, 1)
+        d.rect(74, 28, 50, 11, 1)
+        d.text(time_label, 76, 30, 1)
+
+        d.hline(0, 46, 128, 1)
+        if self.saver_cursor == 0:
+            d.text("BTN1: TOGGLE", 16, 50, 1)
+        else:
+            d.text("BTN1: SET TIMER", 4, 50, 1)
+        d.show()
+
+    def show_running_screen(self):
+        """Render official TEN Robotics Running Splash Screen when script executes."""
+        if not self.display or self.is_uploading:
+            return
+        try:
+            d = self.display
+            d.fill(0)
+            d.fill_rect(0, 0, 128, 12, 1)
+            d.text("TEN ROBOTICS", 16, 2, 0)
+
+            # Draw Running Mascot
+            ox, oy = 6, 16
+            d.pixel(ox + 3, oy, 1)
+            d.pixel(ox + 4, oy + 1, 1)
+            d.pixel(ox + 8, oy, 1)
+            d.pixel(ox + 7, oy + 1, 1)
+            d.fill_rect(ox + 2, oy + 2, 8, 5, 1)
+            d.pixel(ox + 4, oy + 4, 0)
+            d.pixel(ox + 7, oy + 4, 0)
+            d.fill_rect(ox + 1, oy + 8, 10, 6, 1)
+            d.pixel(ox + 4, oy + 10, 0)
+            d.pixel(ox + 7, oy + 10, 0)
+            d.fill_rect(ox + 2, oy + 15, 3, 5, 1)
+            d.fill_rect(ox + 7, oy + 15, 3, 3, 1)
+
+            # Center Text: max 12 chars wide from x=24
+            d.text("RUNNING...", 24, 18, 1)
+            fname = getattr(self, 'active_filename', 'app.py')
+            if len(fname) > 12:
+                disp_fname = fname[:11] + "~"
+            else:
+                disp_fname = fname
+            d.text(f">{disp_fname}", 22, 30, 1)
+
+            d.hline(0, 46, 128, 1)
+            d.text("LIVE EXECUTION", 8, 50, 1)
+            d.show()
+        except Exception as e:
+            print("MGR: Running screen render error:", e)
+
     def render_active_page(self):
         """Render the currently active interactive page."""
         if not self.display or self.is_uploading or self._in_exec:
@@ -441,6 +555,8 @@ class StoreManager:
             elif self.current_page == 6:
                 if self.runner_game:
                     self.runner_game.update()
+            elif self.current_page == 7:
+                self.render_page_screensaver()
         except Exception as e:
             print("MGR: Render page error:", e)
 
@@ -532,7 +648,7 @@ class StoreManager:
             self._active_servo_pin = None
 
     def handle_btn2_long_press(self):
-        """BTN2 Long Press (>500ms): Scroll cursor on Motor & Servo pages."""
+        """BTN2 Long Press (>500ms): Scroll cursor on Motor, Servo & Screensaver pages."""
         if self._in_exec or self.is_uploading:
             return
         if self.current_page == 3: # MOTOR TEST page
@@ -541,6 +657,10 @@ class StoreManager:
             self.render_active_page()
         elif self.current_page == 4: # SERVO TEST page
             self.servo_cursor = (self.servo_cursor + 1) % 3
+            buzzer.tone(1400, 35)
+            self.render_active_page()
+        elif self.current_page == 7: # SCREENSAVER page
+            self.saver_cursor = 1 if self.saver_cursor == 0 else 0
             buzzer.tone(1400, 35)
             self.render_active_page()
 
@@ -557,7 +677,6 @@ class StoreManager:
             self._stop_servo()
 
         self.current_page = (self.current_page + 1) % self.total_pages
-        buzzer.play_button()
         self.render_active_page()
 
     def handle_btn1_short_click(self):
@@ -623,6 +742,17 @@ class StoreManager:
             if self.runner_game:
                 self.runner_game.on_btn1_action()
 
+        # Page 7: Screensaver Config -> Toggle On/Off or Increment Time
+        elif self.current_page == 7:
+            if self.saver_cursor == 0:
+                self.screensaver_enabled = not self.screensaver_enabled
+                buzzer.tone(1400 if self.screensaver_enabled else 700, 40)
+            else:
+                self.screensaver_timeout_idx = (self.screensaver_timeout_idx + 1) % len(self.screensaver_timeout_options)
+                buzzer.play_button()
+            self._save_settings()
+            self.render_active_page()
+
     def handle_btn1_long_press(self):
         """BTN1 Long Press (>500ms): Contextual Option Configuration."""
         if self._in_exec or self.is_uploading:
@@ -676,6 +806,12 @@ class StoreManager:
             buzzer.tone(1800, 40)
             self.render_active_page()
 
+        # Page 7: Screensaver -> Switch Cursor between Mode and Time
+        elif self.current_page == 7:
+            self.saver_cursor = 1 if self.saver_cursor == 0 else 0
+            buzzer.tone(1500, 35)
+            self.render_active_page()
+
     def poll_buttons(self):
         """High-responsiveness physical button polling state machine."""
         now = time.ticks_ms()
@@ -696,6 +832,7 @@ class StoreManager:
                 self.btn2_down = True
                 self.btn2_press_tick = now
                 self.btn2_long_triggered = False
+                buzzer.play_nav() # Instant sound on pressing Next Screen button
             else:
                 if not self.btn2_long_triggered and time.ticks_diff(now, self.btn2_press_tick) > 500:
                     self.btn2_long_triggered = True
@@ -705,7 +842,7 @@ class StoreManager:
                 self.btn2_down = False
                 if not self.btn2_long_triggered:
                     dur = time.ticks_diff(now, self.btn2_press_tick)
-                    if dur > 40:
+                    if dur > 25:
                         self.handle_btn2_page_cycle()
 
         # BTN1: Contextual Action Button (Active Low, GPIO 16)
@@ -737,9 +874,10 @@ class StoreManager:
         if self.motor_test_running or self.servo_sweep_running or self._in_exec or self.is_uploading or self.prog_status == "RUNNING" or game_active:
             self.last_activity_ticks = now
 
-        # Idle timeout for screensaver (30 seconds)
-        if not self.is_screensaver and not self._in_exec and not self.is_uploading and self.prog_status != "RUNNING" and not self.motor_test_running and not self.servo_sweep_running and not game_active:
-            if time.ticks_diff(now, self.last_activity_ticks) >= 30000:
+        # Idle timeout for screensaver (configurable ON/OFF and duration)
+        if getattr(self, 'screensaver_enabled', True) and not self.is_screensaver and not self._in_exec and not self.is_uploading and self.prog_status != "RUNNING" and not self.motor_test_running and not self.servo_sweep_running and not game_active:
+            timeout_ms = self.screensaver_timeout_options[self.screensaver_timeout_idx]
+            if time.ticks_diff(now, self.last_activity_ticks) >= timeout_ms:
                 self.is_screensaver = True
                 if self.screensaver:
                     self.screensaver.start_random()
@@ -802,7 +940,12 @@ class StoreManager:
                 self.wifi_mgr.send_broadcast(payload)
             except Exception:
                 pass
-        if self.ble_mgr and getattr(self.ble_mgr, 'is_connected', False):
+        # BLE Console transmission:
+        # Note: If ble_mgr has dupterm attached to sys.stdout, sys.stdout.write(text)
+        # already routes through BLEStream.write() -> send_console().
+        # Only call send_console directly if dupterm is not attached to avoid duplicate echo.
+        has_dupterm = bool(self.ble_mgr and getattr(self.ble_mgr, 'stream', None))
+        if self.ble_mgr and getattr(self.ble_mgr, 'is_connected', False) and not has_dupterm:
             try:
                 self.ble_mgr.send_console(payload)
             except Exception:
@@ -889,6 +1032,8 @@ class StoreManager:
             self._upload_total_lines = total_lines
             self._upload_current_line = 0
             self._upload_target_file = filename
+            self.active_filename = filename
+            self._save_settings()
             self.is_uploading = True
 
             if self._upload_file:
@@ -1029,22 +1174,27 @@ class StoreManager:
                 pass
 
     def start_prog(self):
-        """Safely starts script execution, with zero-freeze guard if app.py is missing."""
+        """Safely starts script execution, with zero-freeze guard if script is missing."""
         if self.is_uploading:
             return
 
+        target_file = getattr(self, 'active_filename', 'app.py')
         try:
-            fsize = os.stat("app.py")[6]
+            fsize = os.stat(target_file)[6]
         except Exception:
-            fsize = 0
+            target_file = 'app.py'
+            try:
+                fsize = os.stat('app.py')[6]
+            except Exception:
+                fsize = 0
 
         if fsize <= 0:
-            print("MGR: Start aborted — app.py not found or empty!")
+            print("MGR: Start aborted — script not found or empty!")
             self.prog_status = "STOPPED"
             self._in_exec = False
             self.last_error = "NO CODE"
             buzzer.play_error()
-            self.write_out("ERR:No code uploaded in app.py\n")
+            self.write_out("ERR:No code uploaded\n")
             self.write_out("STATUS:STOPPED\n")
             self.render_active_page()
             return
@@ -1055,7 +1205,7 @@ class StoreManager:
         buzzer.play_run()
         self.write_out("STATUS:RUNNING\n")
         print(f"MGR: Program Execution Started (Session {self.exec_start_ticks})")
-        self.render_active_page()
+        self.show_running_screen()
 
     def stop_prog(self, err=None, hold_display_ms=0):
         self.prog_status = "STOPPED"

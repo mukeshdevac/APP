@@ -86,17 +86,26 @@ def main():
 
             # Supervised Program Execution
             if mgr and mgr.prog_status == "RUNNING" and not mgr.is_uploading:
+                target_file = getattr(mgr, 'active_filename', 'app.py')
                 try:
-                    fsize = os.stat("app.py")[6]
+                    fsize = os.stat(target_file)[6]
                 except Exception:
-                    fsize = 0
+                    target_file = "app.py"
+                    try:
+                        fsize = os.stat("app.py")[6]
+                    except Exception:
+                        fsize = 0
 
                 if fsize <= 0:
-                    print("MAIN: No program found (app.py empty) - halting execution.")
+                    print(f"MAIN: No program found ({target_file} empty) - halting execution.")
                     mgr.stop_prog("NO SCRIPT")
                 else:
                     session_id = mgr.exec_start_ticks
                     mgr._in_exec = True
+
+                    # Display official TEN Robotics Program Running Screen
+                    if mgr:
+                        mgr.show_running_screen()
 
                     def check_abort():
                         if not mgr or mgr.prog_status != "RUNNING" or mgr.exec_start_ticks != session_id or mgr.is_uploading:
@@ -132,8 +141,8 @@ def main():
                     }
 
                     try:
-                        print(f"--- EXEC START (Session {session_id}) ---")
-                        with open("app.py", "r") as f:
+                        print(f"--- EXEC START (Session {session_id} - {target_file}) ---")
+                        with open(target_file, "r") as f:
                             code_str = f.read()
 
                         gc.collect()

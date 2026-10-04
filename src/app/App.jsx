@@ -47,6 +47,16 @@ function App() {
   useEffect(() => {
     connectionManager.onData = (line) => {
       const msg = line.trim();
+      // Drop any power / battery telemetry spam
+      if (
+        msg.includes('POWER:') ||
+        /\b[VIBP]=[-\d.]+/i.test(msg) ||
+        /B=\d+/i.test(msg) ||
+        /"(?:v|pct|ma|p)"\s*:/i.test(msg) ||
+        /^[\s,]*[\d.]+\}\s*$/.test(msg)
+      ) {
+        return;
+      }
       if (msg.startsWith('STATUS:')) {
         const parts = msg.split(':');
         if (parts.length > 1) setRunning(parts[1].trim() === 'RUNNING');

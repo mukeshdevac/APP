@@ -254,7 +254,7 @@ const ExampleDropdown = ({ onSelect }) => {
 
     const handleItemClick = (item) => {
         setSelectedId(item.id);
-        onSelect(item.xml);
+        onSelect(item.xml, item.name);
         toast.success(`Loaded example: ${item.name}`);
         setIsOpen(false);
     };
@@ -697,6 +697,7 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
     }, [guideWidth]);
     const [, setSensorValue] = useState(0);
     const [pythonCode, setPythonCode] = useState('');
+    const [currentFileName, setCurrentFileName] = useState('app.py');
     const [copied, setCopied] = useState(false);
     const [copiedLogs, setCopiedLogs] = useState(false);
     const [isPythonEditing, setIsPythonEditing] = useState(false);
@@ -737,7 +738,33 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
         if (logs && logs.length > 0) {
             const raw = logs.join('');
             /* eslint-disable-next-line no-control-regex */
-            const clean = raw.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+            const ansiClean = raw.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+            const clean = ansiClean
+                .split('\n')
+                .map((line) => {
+                    const trimmed = line.trim();
+                    if (
+                        trimmed.includes('POWER:') ||
+                        /\b[VIBP]=[-\d.]+/i.test(trimmed) ||
+                        /B=\d+/i.test(trimmed) ||
+                        /"(?:v|pct|ma|p)"\s*:/i.test(trimmed) ||
+                        /^[\s,]*[\d.]+\}\s*$/.test(trimmed)
+                    ) {
+                        const stripped = trimmed
+                            .replace(/POWER:\s*\{[^}]*\}/gi, '')
+                            .replace(/POWER:\s*V=[-\d.]+,?I=[-\d.]+,?P=[-\d.]+,?B=\d+/gi, '')
+                            .replace(/POWER:[^\s,]*/gi, '')
+                            .replace(/\{[^{}]*"(?:v|pct|ma|p|b)"\s*:[^{}]*\}/gi, '')
+                            .replace(/(?:^|[,;\s])(?:V=[-\d.]+|I=[-\d.]+|P=[-\d.]+|B=\d+)+/gi, '')
+                            .replace(/^[\s,]*[\d.]+\}\s*$/g, '')
+                            .replace(/(?:^|[,;\s])"(?:v|pct|ma|p|b)"\s*:\s*[\d.]+/gi, '')
+                            .trim();
+                        return (!stripped || /^[,;{}.\s]+$/.test(stripped)) ? '' : stripped;
+                    }
+                    return line;
+                })
+                .filter((l) => l.length > 0)
+                .join('\n');
             navigator.clipboard.writeText(clean);
             setCopiedLogs(true);
             toast.success("Serial logs copied to clipboard!");
@@ -806,13 +833,14 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'main.py';
+        const saveName = currentFileName || 'app.py';
+        a.download = saveName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        toast.success("Saved Python code as main.py");
-    }, [pythonCode]);
+        toast.success(`Saved Python code as ${saveName}`);
+    }, [pythonCode, currentFileName]);
 
     // Open Python file
     const handleOpenPythonFile = React.useCallback((event) => {
@@ -826,6 +854,7 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
                 setPythonCode(code);
                 setIsCustomPython(true);
                 setIsPythonEditing(true);
+                setCurrentFileName(file.name);
                 toast.success(`Loaded ${file.name} into Python editor`);
             }
         };
@@ -953,8 +982,8 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
         } else {
             setIsUploading(true);
             try {
-                await connectionManager.uploadCode(codeToUpload);
-                toast.success('Code uploaded successfully!');
+                await connectionManager.uploadCode(codeToUpload, null, currentFileName);
+                toast.success(`Code uploaded as ${currentFileName}!`);
             } catch (error) {
                 toast.error('Upload failed: ' + error.message);
             } finally {
@@ -1002,7 +1031,11 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
 
                 <div className="ide-header-right">
                     <ExampleDropdown
-                        onSelect={(xml) => {
+                        onSelect={(xml, name) => {
+                            if (name) {
+                                const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 16) + '.py';
+                                setCurrentFileName(slug);
+                            }
                             if (editorRef.current && editorRef.current.loadXml) {
                                 editorRef.current.loadXml(xml);
                             }
@@ -1349,10 +1382,11 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
                                     justifyContent: 'space-between',
                                     padding: '0 16px',
                                     userSelect: 'none',
-                                    flexShrink: 0
+                                    flexShrink: 0,
+                                    position: 'relative'
                                 }}>
                                     {/* Indian Flag Colors Traffic Light Buttons */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '80px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '80px', zIndex: 2 }}>
                                         {/* Saffron / Kesari */}
                                         <div
                                             onClick={() => setIsSidebarOpen(false)}
@@ -1426,13 +1460,17 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
                                         />
                                     </div>
 
-                                    {/* Center: Apple Pill Segmented Switcher */}
+                                    {/* Center: Apple Pill Segmented Switcher (Statically Centered to Avoid Jumps) */}
                                     <div style={{
+                                        position: 'absolute',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
                                         display: 'flex',
                                         background: '#E2E8F0',
                                         padding: '3px',
                                         borderRadius: '999px',
-                                        gap: '2px'
+                                        gap: '2px',
+                                        zIndex: 1
                                     }}>
                                         <button
                                             onClick={() => setSidebarTab('preview')}
@@ -1479,7 +1517,7 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
                                     </div>
 
                                     {/* Right Actions */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '80px', justifyContent: 'flex-end' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '80px', justifyContent: 'flex-end', marginLeft: 'auto', zIndex: 2 }}>
                                         {/* Battery Percentage Only - Kept strictly on Serial Monitor */}
                                         {sidebarTab === 'monitor' && (
                                             <div
@@ -1553,279 +1591,281 @@ const IDE = ({ project, onBack, isConnected, uploadProgress = 0, onUpload, logs,
 
                                 {/* Notebook Content */}
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-                                    <AnimatePresence mode="wait">
-                                        {sidebarTab === 'preview' ? (
-                                            <Motion.div
-                                                key="tab-preview"
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.12 }}
-                                                style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0F172A', overflow: 'hidden', minHeight: 0 }}
-                                            >
-                                            {/* Subheader info bar */}
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                padding: '7px 16px',
-                                                background: '#1E293B',
-                                                borderBottom: '1px solid #334155',
-                                                fontSize: '0.74rem',
-                                                color: '#94A3B8',
-                                                flexWrap: 'wrap',
-                                                gap: '8px'
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <FileCode size={13} color="#38BDF8" />
-                                                    <span style={{ color: '#F1F5F9', fontFamily: 'monospace', fontWeight: '600' }}>
-                                                        main.py
-                                                    </span>
+                                    {/* Python Notebook Pane - Kept persistent in DOM to eliminate unmount/remount flicker */}
+                                    <div
+                                        style={{
+                                            flex: 1,
+                                            display: sidebarTab === 'preview' ? 'flex' : 'none',
+                                            flexDirection: 'column',
+                                            background: '#0F172A',
+                                            overflow: 'hidden',
+                                            minHeight: 0
+                                        }}
+                                    >
+                                        {/* Subheader info bar */}
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '7px 16px',
+                                            background: '#1E293B',
+                                            borderBottom: '1px solid #334155',
+                                            fontSize: '0.74rem',
+                                            color: '#94A3B8',
+                                            flexWrap: 'wrap',
+                                            gap: '8px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <FileCode size={13} color="#38BDF8" />
+                                                <span style={{ color: '#F1F5F9', fontFamily: 'monospace', fontWeight: '600' }}>
+                                                    main.py
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '0.64rem',
+                                                    fontWeight: '700',
+                                                    color: '#38BDF8',
+                                                    background: 'rgba(56, 189, 248, 0.12)',
+                                                    padding: '1px 6px',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid rgba(56, 189, 248, 0.25)'
+                                                }}>
+                                                    MicroPython
+                                                </span>
+                                                {isCustomPython ? (
                                                     <span style={{
                                                         fontSize: '0.64rem',
                                                         fontWeight: '700',
-                                                        color: '#38BDF8',
-                                                        background: 'rgba(56, 189, 248, 0.12)',
+                                                        color: '#F59E0B',
+                                                        background: 'rgba(245, 158, 11, 0.15)',
                                                         padding: '1px 6px',
                                                         borderRadius: '4px',
-                                                        border: '1px solid rgba(56, 189, 248, 0.25)'
+                                                        border: '1px solid rgba(245, 158, 11, 0.3)'
                                                     }}>
-                                                        MicroPython
+                                                        ✏️ Custom (Edited)
                                                     </span>
-                                                    {isCustomPython ? (
-                                                        <span style={{
-                                                            fontSize: '0.64rem',
-                                                            fontWeight: '700',
-                                                            color: '#F59E0B',
-                                                            background: 'rgba(245, 158, 11, 0.15)',
-                                                            padding: '1px 6px',
-                                                            borderRadius: '4px',
-                                                            border: '1px solid rgba(245, 158, 11, 0.3)'
-                                                        }}>
-                                                            ✏️ Custom (Edited)
-                                                        </span>
-                                                    ) : (
-                                                        <span style={{
-                                                            fontSize: '0.64rem',
-                                                            fontWeight: '700',
-                                                            color: '#10B981',
-                                                            background: 'rgba(16, 185, 129, 0.15)',
-                                                            padding: '1px 6px',
-                                                            borderRadius: '4px',
-                                                            border: '1px solid rgba(16, 185, 129, 0.3)'
-                                                        }}>
-                                                            ⚡ Auto-Synced
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* Python Editor Actions: Open, Save, Edit, Sync, Copy */}
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <input
-                                                        type="file"
-                                                        ref={pythonFileInputRef}
-                                                        accept=".py,.txt"
-                                                        style={{ display: 'none' }}
-                                                        onChange={handleOpenPythonFile}
-                                                    />
-                                                    <button
-                                                        onClick={() => pythonFileInputRef.current?.click()}
-                                                        title="Open .py file"
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            background: '#0F172A',
-                                                            color: '#94A3B8',
-                                                            border: '1px solid #334155',
-                                                            borderRadius: '5px',
-                                                            padding: '3px 8px',
-                                                            fontSize: '0.7rem',
-                                                            fontWeight: '600',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        <FolderOpen size={12} color="#D97706" />
-                                                        <span>Open</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={handleSavePython}
-                                                        title="Save Python code as main.py"
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            background: '#0F172A',
-                                                            color: '#94A3B8',
-                                                            border: '1px solid #334155',
-                                                            borderRadius: '5px',
-                                                            padding: '3px 8px',
-                                                            fontSize: '0.7rem',
-                                                            fontWeight: '600',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        <Download size={12} color="#059669" />
-                                                        <span>Save</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setIsPythonEditing(!isPythonEditing)}
-                                                        title={isPythonEditing ? "Lock Editor (Read-Only)" : "Unlock for Direct Python Editing"}
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            background: isPythonEditing ? 'rgba(56, 189, 248, 0.2)' : '#0F172A',
-                                                            color: isPythonEditing ? '#38BDF8' : '#94A3B8',
-                                                            border: isPythonEditing ? '1px solid #38BDF8' : '1px solid #334155',
-                                                            borderRadius: '5px',
-                                                            padding: '3px 8px',
-                                                            fontSize: '0.7rem',
-                                                            fontWeight: '600',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        <Edit3 size={12} color={isPythonEditing ? '#38BDF8' : '#94A3B8'} />
-                                                        <span>{isPythonEditing ? 'Editing' : 'Edit'}</span>
-                                                    </button>
-                                                    {isCustomPython && (
-                                                        <button
-                                                            onClick={handleSyncFromBlocks}
-                                                            title="Discard manual edits and sync from Blockly"
-                                                            style={{
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '4px',
-                                                                background: '#0F172A',
-                                                                color: '#F59E0B',
-                                                                border: '1px solid rgba(245, 158, 11, 0.4)',
-                                                                borderRadius: '5px',
-                                                                padding: '3px 8px',
-                                                                fontSize: '0.7rem',
-                                                                fontWeight: '600',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                        >
-                                                            <RotateCcw size={12} />
-                                                            <span>Sync Blocks</span>
-                                                        </button>
-                                                    )}
-                                                    <button
-                                                        onClick={handleCopyCode}
-                                                        title="Copy Python Code"
-                                                        style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            background: copied ? '#064E3B' : '#0F172A',
-                                                            color: copied ? '#34D399' : '#94A3B8',
-                                                            border: copied ? '1px solid #059669' : '1px solid #334155',
-                                                            borderRadius: '5px',
-                                                            padding: '3px 8px',
-                                                            fontSize: '0.7rem',
-                                                            fontWeight: '600',
-                                                            cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        {copied ? <Check size={12} /> : <Copy size={12} />}
-                                                        <span>{copied ? 'Copied' : 'Copy'}</span>
-                                                    </button>
-                                                </div>
+                                                ) : (
+                                                    <span style={{
+                                                        fontSize: '0.64rem',
+                                                        fontWeight: '700',
+                                                        color: '#10B981',
+                                                        background: 'rgba(16, 185, 129, 0.15)',
+                                                        padding: '1px 6px',
+                                                        borderRadius: '4px',
+                                                        border: '1px solid rgba(16, 185, 129, 0.3)'
+                                                    }}>
+                                                        ⚡ Auto-Synced
+                                                    </span>
+                                                )}
                                             </div>
 
-                                            {/* Code Editor Body with Line Numbers */}
-                                            <div style={{
-                                                flex: 1,
-                                                overflowY: 'auto',
-                                                padding: '12px 0',
-                                                fontFamily: "'SF Mono', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace",
-                                                fontSize: '0.84rem',
-                                                lineHeight: '1.65',
-                                                display: 'flex',
-                                                flexDirection: 'column'
-                                            }}>
-                                                {!pythonCode ? (
-                                                    <div style={{ padding: '40px 20px', color: '#64748B', fontStyle: 'italic', textAlign: 'center' }}>
-                                                        # Drag blocks onto workspace or open a Python file to start coding...
+                                            {/* Python Editor Actions: Open, Save, Edit, Sync, Copy */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <input
+                                                    type="file"
+                                                    ref={pythonFileInputRef}
+                                                    accept=".py,.txt"
+                                                    style={{ display: 'none' }}
+                                                    onChange={handleOpenPythonFile}
+                                                />
+                                                <button
+                                                    onClick={() => pythonFileInputRef.current?.click()}
+                                                    title="Open .py file"
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        background: '#0F172A',
+                                                        color: '#94A3B8',
+                                                        border: '1px solid #334155',
+                                                        borderRadius: '5px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <FolderOpen size={12} color="#D97706" />
+                                                    <span>Open</span>
+                                                </button>
+                                                <button
+                                                    onClick={handleSavePython}
+                                                    title="Save Python code as main.py"
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        background: '#0F172A',
+                                                        color: '#94A3B8',
+                                                        border: '1px solid #334155',
+                                                        borderRadius: '5px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <Download size={12} color="#059669" />
+                                                    <span>Save</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsPythonEditing(!isPythonEditing)}
+                                                    title={isPythonEditing ? "Lock Editor (Read-Only)" : "Unlock for Direct Python Editing"}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        background: isPythonEditing ? 'rgba(56, 189, 248, 0.2)' : '#0F172A',
+                                                        color: isPythonEditing ? '#38BDF8' : '#94A3B8',
+                                                        border: isPythonEditing ? '1px solid #38BDF8' : '1px solid #334155',
+                                                        borderRadius: '5px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <Edit3 size={12} color={isPythonEditing ? '#38BDF8' : '#94A3B8'} />
+                                                    <span>{isPythonEditing ? 'Editing' : 'Edit'}</span>
+                                                </button>
+                                                {isCustomPython && (
+                                                    <button
+                                                        onClick={handleSyncFromBlocks}
+                                                        title="Discard manual edits and sync from Blockly"
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            background: '#0F172A',
+                                                            color: '#F59E0B',
+                                                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                            borderRadius: '5px',
+                                                            padding: '3px 8px',
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <RotateCcw size={12} />
+                                                        <span>Sync Blocks</span>
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={handleCopyCode}
+                                                    title="Copy Python Code"
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        background: copied ? '#064E3B' : '#0F172A',
+                                                        color: copied ? '#34D399' : '#94A3B8',
+                                                        border: copied ? '1px solid #059669' : '1px solid #334155',
+                                                        borderRadius: '5px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: '600',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {copied ? <Check size={12} /> : <Copy size={12} />}
+                                                    <span>{copied ? 'Copied' : 'Copy'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Code Editor Body with Line Numbers */}
+                                        <div style={{
+                                            flex: 1,
+                                            overflowY: 'auto',
+                                            padding: '12px 0',
+                                            fontFamily: "'SF Mono', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace",
+                                            fontSize: '0.84rem',
+                                            lineHeight: '1.65',
+                                            display: 'flex',
+                                            flexDirection: 'column'
+                                        }}>
+                                            {!pythonCode ? (
+                                                <div style={{ padding: '40px 20px', color: '#64748B', fontStyle: 'italic', textAlign: 'center' }}>
+                                                    # Drag blocks onto workspace or open a Python file to start coding...
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', minWidth: '100%', flex: 1 }}>
+                                                    <div style={{
+                                                        padding: '0 12px 0 16px',
+                                                        color: '#475569',
+                                                        textAlign: 'right',
+                                                        userSelect: 'none',
+                                                        fontSize: '0.76rem',
+                                                        lineHeight: '1.65',
+                                                        borderRight: '1px solid #1E293B',
+                                                        minWidth: '38px',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        {pythonCode.split('\n').map((_, idx) => (
+                                                            <div key={idx}>{idx + 1}</div>
+                                                        ))}
                                                     </div>
-                                                ) : (
-                                                    <div style={{ display: 'flex', minWidth: '100%', flex: 1 }}>
-                                                        <div style={{
-                                                            padding: '0 12px 0 16px',
-                                                            color: '#475569',
-                                                            textAlign: 'right',
-                                                            userSelect: 'none',
-                                                            fontSize: '0.76rem',
-                                                            lineHeight: '1.65',
-                                                            borderRight: '1px solid #1E293B',
-                                                            minWidth: '38px',
-                                                            flexShrink: 0
-                                                        }}>
-                                                            {pythonCode.split('\n').map((_, idx) => (
-                                                                <div key={idx}>{idx + 1}</div>
-                                                            ))}
-                                                        </div>
-                                                        {isPythonEditing ? (
-                                                            <textarea
-                                                                value={pythonCode}
-                                                                onChange={(e) => {
-                                                                    setPythonCode(e.target.value);
-                                                                    setIsCustomPython(true);
-                                                                }}
-                                                                onKeyDown={handlePythonKeyDown}
-                                                                spellCheck={false}
-                                                                style={{
-                                                                    flex: 1,
-                                                                    margin: 0,
-                                                                    padding: '0 18px',
-                                                                    color: '#38BDF8',
-                                                                    fontSize: '0.84rem',
-                                                                    lineHeight: '1.65',
-                                                                    fontFamily: 'inherit',
-                                                                    background: 'transparent',
-                                                                    border: 'none',
-                                                                    outline: 'none',
-                                                                    resize: 'none',
-                                                                    whiteSpace: 'pre',
-                                                                    overflowX: 'auto',
-                                                                    tabSize: 4
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <pre style={{
+                                                    {isPythonEditing ? (
+                                                        <textarea
+                                                            value={pythonCode}
+                                                            onChange={(e) => {
+                                                                setPythonCode(e.target.value);
+                                                                setIsCustomPython(true);
+                                                            }}
+                                                            onKeyDown={handlePythonKeyDown}
+                                                            spellCheck={false}
+                                                            style={{
+                                                                flex: 1,
                                                                 margin: 0,
                                                                 padding: '0 18px',
-                                                                color: '#E2E8F0',
+                                                                color: '#38BDF8',
                                                                 fontSize: '0.84rem',
                                                                 lineHeight: '1.65',
                                                                 fontFamily: 'inherit',
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                outline: 'none',
+                                                                resize: 'none',
                                                                 whiteSpace: 'pre',
                                                                 overflowX: 'auto',
-                                                                flex: 1
-                                                            }}>
-                                                                <code>{pythonCode}</code>
-                                                            </pre>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            </Motion.div>
-                                        ) : (
-                                            <Motion.div
-                                                key="tab-monitor"
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.12 }}
-                                                style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0F172A', overflow: 'hidden', minHeight: 0 }}
-                                            >
-                                                {/* Embedded Serial Terminal */}
-                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-                                                    <SerialTerminal logs={logs} onClear={onClearLogs} isEmbedded={true} />
+                                                                tabSize: 4
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <pre style={{
+                                                            margin: 0,
+                                                            padding: '0 18px',
+                                                            color: '#E2E8F0',
+                                                            fontSize: '0.84rem',
+                                                            lineHeight: '1.65',
+                                                            fontFamily: 'inherit',
+                                                            whiteSpace: 'pre',
+                                                            overflowX: 'auto',
+                                                            flex: 1
+                                                        }}>
+                                                            <code>{pythonCode}</code>
+                                                        </pre>
+                                                    )}
                                                 </div>
-                                            </Motion.div>
-                                        )}
-                                    </AnimatePresence>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Serial Monitor Tab Pane - Kept persistent in DOM to eliminate unmount/remount flicker */}
+                                    <div
+                                        style={{
+                                            flex: 1,
+                                            display: sidebarTab === 'monitor' ? 'flex' : 'none',
+                                            flexDirection: 'column',
+                                            background: '#0F172A',
+                                            overflow: 'hidden',
+                                            minHeight: 0
+                                        }}
+                                    >
+                                        {/* Embedded Serial Terminal */}
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+                                            <SerialTerminal logs={logs} onClear={onClearLogs} isEmbedded={true} isVisible={sidebarTab === 'monitor'} />
+                                        </div>
+                                    </div>
                                 </div>
                             </Motion.div>
                         </Motion.div>

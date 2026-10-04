@@ -325,38 +325,69 @@ export class ConnectionManager {
 
         lines.forEach((line) => {
             const rawLine = line.replace('\r', '');
-            const cleanLine = rawLine.trim();
+            let cleanLine = rawLine.trim();
             if (!cleanLine && rawLine === '') return;
 
-            // 1. JSON & Key-Value Telemetry Parser (updates UI gauges silently)
-            if (cleanLine.startsWith('POWER:')) {
-                const payload = cleanLine.substring(6).trim();
-                if (payload.startsWith('{')) {
+            // 1. JSON & Key-Value Power/Battery Telemetry Filter & Parser
+            // Checks for POWER:, B=..., P=..., V=..., I=..., {"v":...}, or trailing fragments like ", 1.11}"
+            const isPowerRelated = cleanLine.includes('POWER:') ||
+                /\b[VIBP]=[-\d.]+/i.test(cleanLine) ||
+                /B=\d+/i.test(cleanLine) ||
+                /"(?:v|pct|ma|p)"\s*:/i.test(cleanLine) ||
+                /^[\s,]*[\d.]+\}\s*$/.test(cleanLine);
+
+            if (isPowerRelated) {
+                // Extract JSON telemetry if present
+                const jsonMatch = cleanLine.match(/\{[^{}]*"v"\s*:\s*([-\d.]+)[^{}]*\}/i);
+                if (jsonMatch) {
                     try {
-                        const d = JSON.parse(payload);
-                        if (this.onTelemetryUpdate) {
-                            this.onTelemetryUpdate({
-                                v: d.v !== undefined ? Number(d.v) : 0,
-                                pct: d.pct !== undefined ? Number(d.pct) : (d.b !== undefined ? Number(d.b) : 0),
-                                ma: d.ma !== undefined ? Number(d.ma) : (d.i !== undefined ? Number(d.i) : 0),
-                                p: d.p !== undefined ? Number(d.p) : 0,
-                                b: d.pct !== undefined ? Number(d.pct) : (d.b !== undefined ? Number(d.b) : 0)
-                            });
+                        const sIdx = cleanLine.indexOf('{');
+                        const eIdx = cleanLine.lastIndexOf('}');
+                        if (sIdx !== -1 && eIdx > sIdx) {
+                            const d = JSON.parse(cleanLine.substring(sIdx, eIdx + 1));
+                            if (this.onTelemetryUpdate) {
+                                this.onTelemetryUpdate({
+                                    v: d.v !== undefined ? Number(d.v) : 0,
+                                    pct: d.pct !== undefined ? Number(d.pct) : (d.b !== undefined ? Number(d.b) : 0),
+                                    ma: d.ma !== undefined ? Number(d.ma) : (d.i !== undefined ? Number(d.i) : 0),
+                                    p: d.p !== undefined ? Number(d.p) : 0,
+                                    b: d.pct !== undefined ? Number(d.pct) : (d.b !== undefined ? Number(d.b) : 0)
+                                });
+                            }
                         }
-                    } catch (e) {}
-                } else {
-                    const kvMatch = cleanLine.match(/V=([-\d.]+).*?I=([-\d.]+).*?P=([-\d.]+).*?B=([-\d]+)/i);
-                    if (kvMatch && this.onTelemetryUpdate) {
+                    } catch (_) {}
+                }
+
+                // Extract Key-Value telemetry (V=..., I=..., P=..., B=...)
+                const kvMatch = cleanLine.match(/(?:V=([-\d.]+))?.*?(?:I=([-\d.]+))?.*?(?:P=([-\d.]+))?.*?B=([-\d]+)/i);
+                if (kvMatch && (kvMatch[1] !== undefined || kvMatch[4] !== undefined)) {
+                    if (this.onTelemetryUpdate) {
                         this.onTelemetryUpdate({
-                            v: parseFloat(kvMatch[1]),
-                            ma: parseFloat(kvMatch[2]),
-                            p: parseFloat(kvMatch[3]),
-                            pct: Math.max(0, Math.min(100, parseInt(kvMatch[4], 10))),
-                            b: Math.max(0, Math.min(100, parseInt(kvMatch[4], 10)))
+                            v: kvMatch[1] ? parseFloat(kvMatch[1]) : 0,
+                            ma: kvMatch[2] ? parseFloat(kvMatch[2]) : 0,
+                            p: kvMatch[3] ? parseFloat(kvMatch[3]) : 0,
+                            pct: kvMatch[4] ? Math.max(0, Math.min(100, parseInt(kvMatch[4], 10))) : 0,
+                            b: kvMatch[4] ? Math.max(0, Math.min(100, parseInt(kvMatch[4], 10))) : 0
                         });
                     }
                 }
-                return; // Telemetry updates HUD silently, does not clutter Serial Monitor text
+
+                // Strip power/battery telemetry parts from cleanLine
+                const stripped = cleanLine
+                    .replace(/POWER:\s*\{[^}]*\}/gi, '')
+                    .replace(/POWER:\s*V=[-\d.]+,?I=[-\d.]+,?P=[-\d.]+,?B=\d+/gi, '')
+                    .replace(/POWER:[^\s,]*/gi, '')
+                    .replace(/\{[^{}]*"(?:v|pct|ma|p|b)"\s*:[^{}]*\}/gi, '')
+                    .replace(/(?:^|[,;\s])(?:V=[-\d.]+|I=[-\d.]+|P=[-\d.]+|B=\d+)+/gi, '')
+                    .replace(/^[\s,]*[\d.]+\}\s*$/g, '')
+                    .replace(/(?:^|[,;\s])"(?:v|pct|ma|p|b)"\s*:\s*[\d.]+/gi, '')
+                    .trim();
+
+                // If only power/battery tokens were present, completely drop from Serial Monitor
+                if (!stripped || /^[,;{}.\s]+$/.test(stripped)) {
+                    return; // Telemetry updates HUD silently, does not clutter Serial Monitor text
+                }
+                cleanLine = stripped;
             }
 
             // 2. Sensor Live Stream: SENSOR:1234
@@ -387,8 +418,16 @@ export class ConnectionManager {
             }
 
             // 6. Clean User Code & DevKit Serial Output -> Serial Monitor
+            // Deduplicate rapid echo artifacts (e.g. firmware dual-routing via write_out + uos.dupterm within 150ms)
+            const now = Date.now();
+            if (cleanLine === this._lastEchoLine && (now - this._lastEchoTime) < 150) {
+                return;
+            }
+            this._lastEchoLine = cleanLine;
+            this._lastEchoTime = now;
+
             if (this.onData) {
-                this.onData(rawLine + '\n');
+                this.onData(cleanLine + '\n');
             }
         });
     }
@@ -538,7 +577,7 @@ export class ConnectionManager {
     // ─────────────────────────────────────────────────────────────────────────
     // Closed-Loop Code Flashing Engine with Auto-Retry
     // ─────────────────────────────────────────────────────────────────────────
-    async uploadCode(code, onProgress = null) {
+    async uploadCode(code, onProgress = null, customFilename = 'app.py') {
         if (!this.isConnected) {
             throw new Error('Device is not connected. Please connect via USB, Bluetooth, or WiFi.');
         }
@@ -548,7 +587,11 @@ export class ConnectionManager {
 
         let files = {};
         if (typeof code === 'string') {
-            files['app.py'] = code;
+            const fname = customFilename || 'app.py';
+            files[fname] = code;
+            if (fname !== 'app.py') {
+                files['app.py'] = code;
+            }
         } else if (code && code.sourceDirectory && code.filesToUpload) {
             this.log(`[UPLOAD] Fetching project files from ${code.sourceDirectory}...`);
             for (const filename of code.filesToUpload) {
